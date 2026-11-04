@@ -268,12 +268,16 @@ const listVideos = () => {
   try {
     names = readdirSync(join(ROOT, "src", "videos"), {withFileTypes: true})
       .filter((d) => d.isDirectory() && !d.name.startsWith("_") && !d.name.startsWith("."))
-      .map((d) => d.name)
-      .sort();
+      .map((d) => d.name);
   } catch {
     /* no videos yet */
   }
-  return names;
+  // Newest first, by when the video folder was created; the component gallery goes last.
+  const born = (id: string) => {
+    const st = stat(join(ROOT, "src", "videos", id));
+    return st ? st.birthtimeMs || st.ctimeMs : 0;
+  };
+  return names.sort((a, b) => (a === "gallery" ? 1 : b === "gallery" ? -1 : born(b) - born(a) || a.localeCompare(b)));
 };
 
 const stills = (id: string) => {
@@ -303,6 +307,7 @@ const STEP_META: Record<string, {n: number; label: string; skill: string; comman
   narration: {n: 5, label: "Narration", skill: "sk-narration", command: (id) => `edit src/videos/${id}/narration.json   # sk-narration`},
   tts: {n: 6, label: "TTS", skill: "sk-narration", command: (id) => `bun run tts ${id}`},
   lint: {n: 7, label: "Lint", skill: "sk-narration", command: (id) => `bun run lint ${id}`},
+  storyboard: {n: 7.5, label: "Storyboard", skill: "sk-scene", command: (id) => `bun run storyboard ${id} --init   # then fill in camera and onScreen, get it approved`},
   scenes: {n: 8, label: "Scenes", skill: "sk-scene", command: (id) => `bun run dev ${id}   # then: bun run check`},
   stills: {n: 9, label: "Stills", skill: "sk-scene", command: (id) => `bun run still ${id} --frame=<n>`},
   render: {n: 10, label: "Render", skill: "sk-render", command: (id) => `bun run render ${id}`},
@@ -310,6 +315,65 @@ const STEP_META: Record<string, {n: number; label: string; skill: string; comman
   normalize: {n: 12, label: "Normalize", skill: "sk-render", command: (id) => `bun run normalize ${id}`},
   encode: {n: 13, label: "Encode", skill: "sk-render", command: (id) => `bun run encode ${id}`},
   handoff: {n: 14, label: "Hand-off", skill: "sk-handoff", command: (id) => `write out/${id}/caption.txt and out/${id}/pinned-comment.txt   # sk-handoff`},
+};
+
+// ── pipeline steps from docs/pipeline.json ──────────────────────────────
+// Built-in steps keep the checks above; steps a channel adds (sk-improve) are
+// checked by a simple evidence rule on disk. Missing file: the built-in order.
+type PipeStep = {key: string; n: number; label: string; skill?: string; command?: string; check?: "builtin"; evidence?: {file?: string; glob?: string; json?: string; nonEmpty?: string}};
+const loadPipeline = (): PipeStep[] | null => {
+  const r = readJson<{steps?: PipeStep[]}>(join(ROOT, "docs", "pipeline.json"));
+  return Array.isArray(r.value?.steps) ? r.value!.steps! : null;
+};
+const globMatch = (pattern: string): string[] => {
+  const dirRel = pattern.split("/").slice(0, -1).join("/");
+  const name = pattern.split("/").pop() ?? "";
+  const re = new RegExp("^" + name.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$");
+  try {
+    return readdirSync(join(ROOT, dirRel)).filter((f) => re.test(f)).map((f) => `${dirRel}/${f}`);
+  } catch {
+    return [];
+  }
+};
+const evidenceStatus = (id: string, ev: PipeStep["evidence"]): {status: Status; detail: string} => {
+  const fill = (x: string) => x.replaceAll("{id}", id);
+  if (!ev) return {status: "unknown", detail: "no evidence rule in docs/pipeline.json"};
+  if (ev.file) {
+    const f = fileInfo(join(ROOT, fill(ev.file)));
+    return f ? (f.size ? {status: "done", detail: fill(ev.file)} : {status: "fail", detail: `${fill(ev.file)} is empty`}) : {status: "todo", detail: `no ${fill(ev.file)}`};
+  }
+  if (ev.glob) {
+    const hits = globMatch(fill(ev.glob));
+    return hits.length ? {status: "done", detail: `${hits.length} match ${fill(ev.glob)}`} : {status: "todo", detail: `nothing matches ${fill(ev.glob)}`};
+  }
+  if (ev.json) {
+    const r = readJson<Record<string, unknown>>(join(ROOT, fill(ev.json)));
+    if (r.error) return {status: "fail", detail: `${fill(ev.json)}: ${r.error}`};
+    if (!r.value) return {status: "todo", detail: `no ${fill(ev.json)}`};
+    if (ev.nonEmpty) {
+      const v = r.value[ev.nonEmpty];
+      const ok = Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== "";
+      return ok ? {status: "done", detail: `${fill(ev.json)} has ${ev.nonEmpty}`} : {status: "todo", detail: `${fill(ev.json)}: ${ev.nonEmpty} is empty`};
+    }
+    return {status: "done", detail: fill(ev.json)};
+  }
+  return {status: "unknown", detail: "evidence rule has no file, glob or json"};
+};
+const applyPipeline = (id: string, builtin: Step[]): Step[] => {
+  const pipe = loadPipeline();
+  if (!pipe) return [...builtin].sort((a, b) => a.n - b.n);
+  const out: Step[] = [];
+  for (const p of pipe) {
+    const command = (p.command ?? "").replaceAll("{id}", id);
+    if (p.check === "builtin" || (!p.evidence && builtin.some((b) => b.key === p.key))) {
+      const b = builtin.find((x) => x.key === p.key);
+      if (b) out.push({...b, n: p.n, label: p.label ?? b.label, skill: p.skill ?? b.skill, command: command || b.command});
+      continue;
+    }
+    const e = evidenceStatus(id, p.evidence);
+    out.push({key: p.key, n: p.n, label: p.label, status: e.status, detail: e.detail, command, skill: p.skill ?? ""});
+  }
+  return out.sort((a, b) => a.n - b.n);
 };
 
 const videoState = (id: string) => {
@@ -407,6 +471,21 @@ const videoState = (id: string) => {
   const pinned = fileInfo(out(id, "pinned-comment.txt"));
   const voiceM = stat(voicePath)?.mtimeMs ?? 0;
 
+  // 7.5 storyboard: planned after the voice, approved before scene code (docs/storyboard.md)
+  const sbPath = join(dir, "storyboard.json");
+  const sb = readJson<{shots?: {camera?: string; onScreen?: string; status?: string}[]}>(sbPath);
+  if (sb.error) add("storyboard", "fail", `storyboard.json is not valid JSON: ${sb.error}`);
+  else if (!sb.value) add("storyboard", "todo", "no storyboard.json: plan the shots before building scenes");
+  else {
+    const shots = sb.value.shots ?? [];
+    const todo = shots.filter((x) => /TODO/.test(`${x.camera ?? ""} ${x.onScreen ?? ""}`)).length;
+    const planned = shots.filter((x) => x.status === "planned").length;
+    if (!shots.length) add("storyboard", "todo", "storyboard.json has no shots");
+    else if (todo) add("storyboard", "todo", `${todo} of ${shots.length} shots still TODO`);
+    else if (planned) add("storyboard", "warn", `${planned} of ${shots.length} shots waiting for approval`);
+    else add("storyboard", "done", `${shots.length} shots, ${shots.filter((x) => x.status === "built").length} built`);
+  }
+
   // 8 scenes: no command proves it; stills or a render are the evidence
   add("scenes", st.length || render ? "done" : "todo", st.length || render ? "inferred from stills/render on disk" : "no stills or render yet");
   add("stills", st.length ? "done" : "todo", st.length ? `${st.length} still${st.length > 1 ? "s" : ""} in out/${id}/` : "no out/<id>/still-*.png");
@@ -426,7 +505,9 @@ const videoState = (id: string) => {
   else add("handoff", "todo", "no caption.txt / pinned-comment.txt");
 
   // display order = the sk-pipeline table (facts before brief)
-  steps.sort((a, b) => a.n - b.n);
+  const finalSteps = applyPipeline(id, steps);
+  steps.length = 0;
+  steps.push(...finalSteps);
   const nextStep = steps.find((s) => s.status === "todo" || s.status === "fail" || s.status === "unknown");
   const next = nextStep
     ? {key: nextStep.key, label: nextStep.label, command: nextStep.command, skill: nextStep.skill, detail: nextStep.detail}
@@ -438,7 +519,7 @@ const videoState = (id: string) => {
     flow: n?.flow ?? null,
     steps,
     next,
-    files: {render, loud, upload, cover, coverJpg, caption, pinned, stills: st, voiceJson: fileInfo(voicePath), narrationJson: fileInfo(narrationPath), brief: fileInfo(join(ROOT, "briefs", `${id}.md`))},
+    files: {render, loud, upload, cover, coverJpg, caption, pinned, stills: st, voiceJson: fileInfo(voicePath), narrationJson: fileInfo(narrationPath), storyboard: fileInfo(join(dir, "storyboard.json")), brief: fileInfo(join(ROOT, "briefs", `${id}.md`))},
     voice: voice
       ? {
           engine: voice.engine ?? null,
@@ -459,14 +540,15 @@ const status = () => {
   const videos = listVideos().map((id) => {
     if (id === "gallery") return {id, kind: "gallery" as const, label: "component gallery", command: "bun run dev gallery"};
     const s = videoState(id);
-    return {id, kind: s.kind, flow: s.flow, steps: s.steps, next: s.next};
+    const st = stat(join(ROOT, "src", "videos", id));
+    return {id, kind: s.kind, flow: s.flow, steps: s.steps, next: s.next, created: st ? st.birthtimeMs || st.ctimeMs : 0};
   });
   return {root: ROOT, at: Date.now(), lan: LAN, videos};
 };
 
 // ── safe file serving ─────────────────────────────────────────────────────
-const ALLOWED = [/^out\/[^/]+\/[^/]+$/, /^public\/audio\/.+$/, /^public\/sfx\/.+$/, /^briefs\/[^/]+\.md$/, /^src\/videos\/[^/]+\/(narration|voice)\.json$/];
-const BASES = ["out", "public/audio", "public/sfx", "briefs", "src/videos"];
+const ALLOWED = [/^out\/[^/]+\/[^/]+$/, /^public\/audio\/.+$/, /^public\/sfx\/.+$/, /^briefs\/[^/]+\.md$/, /^src\/videos\/[^/]+\/(narration|voice|storyboard)\.json$/, /^docs\/facts\/(facts|sources)\.json$/];
+const BASES = ["out", "public/audio", "public/sfx", "briefs", "src/videos", "docs/facts"];
 
 /** Resolve a request path to a file under an allowed base, or null. */
 const safePath = (raw: string): string | null => {
@@ -580,6 +662,37 @@ const UI_ASSETS = new Map<string, {body: ArrayBuffer; type: string}>();
   console.log(`  UI built in ${Date.now() - t0} ms (${built.outputs.length} files)`);
 }
 
+// ── frames from the render, for storyboard thumbnails ────────────────────
+// A still can be older than the render; a frame cut from the mp4 is what the
+// viewer will see. Cached by mp4 mtime and time, at most 3 ffmpeg runs at once.
+const FRAME_CACHE = join(ROOT, ".cache", "preview-frames");
+let framesRunning = 0;
+const frameQueue: (() => void)[] = [];
+const withFrameSlot = async <T,>(fn: () => Promise<T>): Promise<T> => {
+  if (framesRunning >= 3) await new Promise<void>((r) => frameQueue.push(r));
+  framesRunning++;
+  try {
+    return await fn();
+  } finally {
+    framesRunning--;
+    frameQueue.shift()?.();
+  }
+};
+const renderFrame = async (id: string, t: number): Promise<Response> => {
+  const f = videoState(id).files;
+  const mp4 = f.upload ?? f.loud ?? f.render;
+  if (!mp4) return text("404 no render for this video", 404);
+  const tt = Math.max(0, Math.round(t * 10) / 10);
+  const dir = join(FRAME_CACHE, id);
+  const file = join(dir, `${Math.round(mp4.mtime)}-${tt.toFixed(1)}.jpg`);
+  if (!existsSync(file)) {
+    mkdirSync(dir, {recursive: true});
+    const r = await withFrameSlot(() => runCmd(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-ss", String(tt), "-i", join(ROOT, mp4.path), "-frames:v", "1", "-vf", "scale=270:-2", "-q:v", "4", file], 20_000));
+    if (r.code !== 0 || !existsSync(file)) return text(`500 ffmpeg failed: ${r.timedOut ? "timeout" : r.stderr.slice(0, 200)}`, 500);
+  }
+  return new Response(Bun.file(file), {headers: {...SECURITY, "Content-Type": "image/jpeg", "Cache-Control": "max-age=3600"}});
+};
+
 const handle = async (req: Request): Promise<Response> => {
   const url = new URL(req.url);
   let setCookie: string | null = null;
@@ -605,6 +718,15 @@ const route = async (req: Request, url: URL): Promise<Response> => {
     return new Response(method === "HEAD" ? null : asset.body, {headers: {...SECURITY, "Content-Type": asset.type, "Cache-Control": path.endsWith(".html") || path === "/" ? "no-store" : "no-cache", "Content-Security-Policy": csp}});
   }
   if (method === "GET" && path === "/api/status") return json(status());
+  {
+    const m = /^\/api\/frame\/([a-z0-9-]+)$/.exec(path);
+    if (method === "GET" && m) {
+      if (!validVideo(m[1])) return text("404 no such video", 404);
+      const t = Number(url.searchParams.get("at"));
+      if (!Number.isFinite(t)) return text("400 at must be a number of seconds", 400);
+      return renderFrame(m[1], t);
+    }
+  }
 
   let m = /^\/api\/video\/([^/]+)$/.exec(path);
   if (method === "GET" && m) {

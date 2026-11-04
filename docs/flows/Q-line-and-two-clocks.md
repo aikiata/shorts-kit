@@ -2,7 +2,7 @@
 
 **Shape:** the arrival, and the gap between plan and reality → the rules set at the start → the line drawn leg by leg → two year-clocks run: planned vs actual, labelled MOVING / WAITING → close on the gap in one sentence
 
-**Beats** (scene ids `bun run new` scaffolds): `hook, rules, leg1, leg2, leg3, leg4, homecoming, payoff, share` · spoken numbering: **no. The clocks replace it** · has a turn: **yes** · fits visuals: illustrated-scene, timeline (or a map type you add)
+**Beats** (scene ids `bun run new` scaffolds): `hook, rules, leg1, leg2, leg3, leg4, homecoming, payoff, share` · spoken numbering: **no. The clocks replace it** · has a turn: **yes** · fits visuals: illustrated-scene, timeline, satellite-map, globe
 
 ## When to use
 

@@ -1,0 +1,18 @@
+{
+  "_doc": "The pipeline steps, in order. Source of truth for the preview dashboard and the sk-pipeline table. Built-in steps (check: \"builtin\") are verified by the preview's own logic. A step you add needs an `evidence` rule the preview can check on disk: {\"file\": \"out/{id}/x.png\"}, {\"glob\": \"out/{id}/*-yt.mp4\"} or {\"json\": \"src/videos/{id}/x.json\", \"nonEmpty\": \"items\"}. Remove a step to hide it. Change steps with sk-improve and log it in SOUL.md's change log.",
+  "steps": [
+    {"key": "facts", "n": 2, "label": "Facts", "skill": "sk-facts", "command": "bun run facts", "check": "builtin"},
+    {"key": "brief", "n": 4, "label": "Brief", "skill": "sk-brief", "command": "cp briefs/_template.md briefs/{id}.md   # then fill it in (sk-brief)", "check": "builtin"},
+    {"key": "narration", "n": 5, "label": "Narration", "skill": "sk-narration", "command": "edit src/videos/{id}/narration.json   # sk-narration", "check": "builtin"},
+    {"key": "tts", "n": 6, "label": "TTS", "skill": "sk-narration", "command": "bun run tts {id}", "check": "builtin"},
+    {"key": "lint", "n": 7, "label": "Lint", "skill": "sk-narration", "command": "bun run lint {id}", "check": "builtin"},
+    {"key": "storyboard", "n": 7.5, "label": "Storyboard", "skill": "sk-scene", "command": "bun run storyboard {id} --init   # then fill in camera and onScreen, get it approved", "check": "builtin"},
+    {"key": "scenes", "n": 8, "label": "Scenes", "skill": "sk-scene", "command": "bun run dev {id}   # then: bun run check", "check": "builtin"},
+    {"key": "stills", "n": 9, "label": "Stills", "skill": "sk-scene", "command": "bun run still {id} --frame=<n>", "check": "builtin"},
+    {"key": "render", "n": 10, "label": "Render", "skill": "sk-render", "command": "bun run render {id}", "check": "builtin"},
+    {"key": "cover", "n": 11, "label": "Cover", "skill": "sk-handoff", "command": "bun run cover {id}", "check": "builtin"},
+    {"key": "normalize", "n": 12, "label": "Normalize", "skill": "sk-render", "command": "bun run normalize {id}", "check": "builtin"},
+    {"key": "encode", "n": 13, "label": "Encode", "skill": "sk-render", "command": "bun run encode {id}", "check": "builtin"},
+    {"key": "handoff", "n": 14, "label": "Hand-off", "skill": "sk-handoff", "command": "write out/{id}/caption.txt and out/{id}/pinned-comment.txt   # sk-handoff", "check": "builtin"}
+  ]
+}

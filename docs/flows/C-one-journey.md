@@ -2,7 +2,7 @@
 
 **Shape:** one continuous move from A to B; facts arrive as the camera passes them → land at the destination
 
-**Beats** (scene ids `bun run new` scaffolds): `hook, leg1, leg2, leg3, destination, share` · spoken numbering: **no. A visible destination replaces it** · has a turn: **yes** · fits visuals: b-roll, illustrated-scene, timeline, archive-plate (or a map type you add)
+**Beats** (scene ids `bun run new` scaffolds): `hook, leg1, leg2, leg3, destination, share` · spoken numbering: **no. A visible destination replaces it** · has a turn: **yes** · fits visuals: b-roll, illustrated-scene, timeline, archive-plate, satellite-map, globe
 
 ## When to use
 

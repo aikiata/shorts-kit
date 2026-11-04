@@ -14,6 +14,7 @@ import {ENGINES} from "./lib/engines";
 import {loadLedger, type Fact} from "./lib/facts";
 import {flatLines, loadNarration, voiceHash, type Narration} from "./lib/narration";
 import {p, videoArg, videoDir} from "./lib/paths";
+import {checkStoryboard, loadStoryboard} from "./lib/storyboard";
 import {loadThresholds, ruleOf} from "./lib/thresholds";
 import {phraseRe, sentences, wordCount, words} from "./lib/text";
 
@@ -270,6 +271,20 @@ if (registry) {
 }
 
 if (!existsSync(p("briefs", `${id}.md`))) warn(`no briefs/${id}.md: the brief holds the flow choice, the rejected shape and the visual plan (§2)`);
+
+// ------------------------------------------------------------------ storyboard
+// Planned after the voice, approved before scene code (docs/storyboard.md).
+{
+  const sb = loadStoryboard(id);
+  if (sb.error) err(`storyboard.json is not valid JSON: ${sb.error}`);
+  else if (!sb.value) {
+    if (voice && !voice.estimated) warn(`no storyboard yet: plan the shots before building scenes (bun run storyboard ${id} --init, docs/storyboard.md)`);
+  } else {
+    for (const i of checkStoryboard(sb.value, lines.length, voice ?? null, visualIds)) (i.level === "error" ? err : warn)(`storyboard: ${i.message}`);
+    const todo = sb.value.shots.filter((x) => /TODO/.test(`${x.camera} ${x.onScreen}`)).length;
+    if (todo) warn(`storyboard: ${todo} shot${todo > 1 ? "s" : ""} still TODO`);
+  }
+}
 
 // ------------------------------------------------------------------ report
 for (const w of warnings) console.log(`warn   ${w}`);

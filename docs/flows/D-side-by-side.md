@@ -2,7 +2,7 @@
 
 **Shape:** two things, at true scale → the whole video closes the gap between what the viewer assumes and what the ruler says
 
-**Beats** (scene ids `bun run new` scaffolds): `hook, thing1, thing2, ruler, closing, payoff, share` · spoken numbering: **no** · has a turn: **yes** · fits visuals: timeline, archive-plate, b-roll, illustrated-scene
+**Beats** (scene ids `bun run new` scaffolds): `hook, thing1, thing2, ruler, closing, payoff, share` · spoken numbering: **no** · has a turn: **yes** · fits visuals: timeline, archive-plate, b-roll, illustrated-scene, satellite-map
 
 ## When to use
 

@@ -2,7 +2,7 @@
 
 **Shape:** the subject is the DEPICTION (or the wording), not the thing depicted → what is drawn or written contradicts what is measured
 
-**Beats** (scene ids `bun run new` scaffolds): `hook, picture, number, gap, payoff, share` · spoken numbering: **no** · has a turn: **yes** · fits visuals: archive-plate, timeline, b-roll
+**Beats** (scene ids `bun run new` scaffolds): `hook, picture, number, gap, payoff, share` · spoken numbering: **no** · has a turn: **yes** · fits visuals: archive-plate, timeline, b-roll, satellite-map
 
 ## When to use
 

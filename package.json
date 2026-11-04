@@ -20,6 +20,7 @@
   "scripts": {
     "new": "bun scripts/new.ts",
     "dev": "bun scripts/remotion.ts dev",
+    "storyboard": "bun scripts/storyboard.ts",
     "tts": "bun scripts/tts.ts",
     "lint": "bun scripts/lint.ts",
     "facts": "bun scripts/facts.ts",
@@ -29,11 +30,15 @@
     "normalize": "bun scripts/normalize.ts",
     "encode": "bun scripts/encode.ts",
     "preview": "bun scripts/preview.ts",
+    "satellite": "bun scripts/satellite.ts",
+    "geo": "bun scripts/geo.ts",
     "check": "bun scripts/check-boundaries.ts && tsc --noEmit"
   },
   "dependencies": {
+    "@react-three/fiber": "9.8.2",
     "@remotion/cli": "4.0.540",
     "@remotion/google-fonts": "4.0.540",
+    "@remotion/three": "4.0.540",
     "@untitledui/icons": "0.0.23",
     "bun-plugin-tailwind": "0.1.2",
     "react": "19.2.0",
@@ -44,12 +49,14 @@
     "tailwind-merge": "3.7.0",
     "tailwindcss": "4.3.4",
     "tailwindcss-animate": "1.0.7",
-    "tailwindcss-react-aria-components": "2.2.0"
+    "tailwindcss-react-aria-components": "2.2.0",
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@types/bun": "1.3.14",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "@types/three": "0.187.0",
     "edge-tts-universal": "1.4.0",
     "typescript": "5.9.3"
   }

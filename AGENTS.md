@@ -34,16 +34,20 @@ Open only the `docs/soul/` file for the step you are on. Exact commands per step
 ## Commands
 
 ```bash
-bun run new <id> --flow <A..N>   # scaffold src/videos/<id>/
+bun run new <id> --flow <A..T>   # scaffold src/videos/<id>/
 bun run dev <id>                 # Remotion Studio
 bun run tts <id> [--force]       # voice.mp3 + voice.json
 bun run lint <id>                # checks from docs/soul/thresholds.json
+bun run storyboard <id> [--init] # shot list after the voice; approved before scenes
+bun run satellite <id>           # satellite mosaics (map.json shots)
+bun run geo <id>                 # coasts, borders, rivers (Natural Earth)
 bun run facts                    # validate docs/facts/*.json
 bun run still <id> [--frame=N]   # out/<id>/still-<N>.png
 bun run render <id>              # out/<id>/<id>.mp4
 bun run cover <id>               # out/<id>/<id>-cover.png
 bun run normalize <id>           # out/<id>/<id>-loud.mp4
 bun run encode <id>              # out/<id>/<id>-upload.mp4
+bun run preview                  # local dashboard: progress, script, storyboard, hand-off
 bun run check                    # boundaries + tsc --noEmit
 ```
 

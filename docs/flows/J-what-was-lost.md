@@ -2,7 +2,7 @@
 
 **Shape:** the place → what it was → how it was lost → what it left behind, each piece standing alone → close on a new idea
 
-**Beats** (scene ids `bun run new` scaffolds): `hook, whatitwas, lost, left1, left2, left3, payoff, share` · spoken numbering: **no** · has a turn: **yes** · fits visuals: archive-plate, b-roll, illustrated-scene
+**Beats** (scene ids `bun run new` scaffolds): `hook, whatitwas, lost, left1, left2, left3, payoff, share` · spoken numbering: **no** · has a turn: **yes** · fits visuals: archive-plate, b-roll, illustrated-scene, satellite-map
 
 ## When to use
 

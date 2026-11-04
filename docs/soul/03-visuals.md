@@ -24,6 +24,8 @@ combination in `narration.json` → `visual`.
 | [`gif`](../visuals/gif.md) | §5e | no coordinates, no artefact: a looping clip carries rhythm, text carries facts |
 | [`b-roll`](../visuals/b-roll.md) | §5f | real footage under the narration, anchored to sentences |
 | [`illustrated-scene`](../visuals/illustrated-scene.md) | §5g | no usable photos or footage: build one world from simple drawn layers and stay in it |
+| [`satellite-map`](../visuals/satellite-map.md) | §5h | the claim lives on the ground: fly over real imagery and draw the facts on it |
+| [`globe`](../visuals/globe.md) | §5i | the claim spans the planet: lines on a sphere, true distances, the pull-out reveal |
 
 The kit ships no map or globe types. If your niche needs one, add it as a visual
 type (see the README); the general rules below still apply.

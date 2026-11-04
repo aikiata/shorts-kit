@@ -19,6 +19,8 @@ combination in `narration.json` → `visual`, using the ids below. An empty list
 | `gif` | §5e | [`gif.md`](gif.md) | a looping bed for rhythm; text and voice carry the facts |
 | `b-roll` | §5f | [`b-roll.md`](b-roll.md) | real footage under story sentences, anchored to the TTS |
 | `illustrated-scene` | §5g | [`illustrated-scene.md`](illustrated-scene.md) | no photos: one drawn world, held all video |
+| `satellite-map` | §5h | [`satellite-map.md`](satellite-map.md) | real ground from satellite or vector data; the camera flies, facts are drawn on it |
+| `globe` | §5i | [`globe.md`](globe.md) | the planet: great-circle lines, distances, the pull-out from a scene to Earth |
 
 ## Choosing
 
@@ -33,6 +35,8 @@ For each claim in the brief, ask "what is on screen while this is said?"
 | a behaviour, a rule, a paradox with no place or object | `gif` (+ a data figure) |
 | people and events with licensed footage | `b-roll` |
 | a person, a place, time passing, with nothing licensed to show | `illustrated-scene` |
+| a distance, a route, a border, a coastline, a place on the ground | `satellite-map` |
+| two places far apart, a journey across oceans, the scale of a trip | `globe` |
 
 If a claim fits none, the topic is not buildable yet. Check licences at this moment.
 

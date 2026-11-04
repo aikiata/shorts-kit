@@ -20,7 +20,7 @@ type Step = {key: string; n: number; label: string; status: Status; detail: stri
 type Next = {key: string; label: string; command: string; skill: string; detail: string};
 type FileInfo = {path: string; size: number; mtime: number} | null;
 type VideoRow =
-  | {id: string; kind: "video"; flow: string | null; steps: Step[]; next: Next}
+  | {id: string; kind: "video"; flow: string | null; steps: Step[]; next: Next; created?: number}
   | {id: string; kind: "gallery"; label: string; command: string};
 type StatusResponse = {root: string; at: number; lan: boolean; videos: VideoRow[]};
 type Lint = {at: number; code: number; timedOut: boolean; errors: number | null; warnings: number | null; output: string; ms: number};
@@ -29,7 +29,7 @@ type VideoState = {
   flow: string | null;
   steps: Step[];
   next: Next;
-  files: {render: FileInfo; loud: FileInfo; upload: FileInfo; cover: FileInfo; coverJpg: FileInfo; caption: FileInfo; pinned: FileInfo; stills: NonNullable<FileInfo>[]; voiceJson: FileInfo; narrationJson: FileInfo; brief: FileInfo};
+  files: {render: FileInfo; loud: FileInfo; upload: FileInfo; cover: FileInfo; coverJpg: FileInfo; caption: FileInfo; pinned: FileInfo; stills: NonNullable<FileInfo>[]; voiceJson: FileInfo; narrationJson: FileInfo; storyboard?: FileInfo; brief: FileInfo};
   voice: null | {engine: string | null; estimated: boolean; duration: number | null; words: number | null; lines: number | null; scenes: {id: string; start: number; end: number}[]; audio: FileInfo};
   lint: Lint | null;
   lintRunning: boolean;
@@ -181,12 +181,67 @@ const Progress = ({steps}: {steps: Step[]}) => {
 };
 
 // ── home ──────────────────────────────────────────────────────────────────
+type Filter = "all" | "active" | "attention" | "ready";
+type Sort = "newest" | "oldest" | "name" | "progress";
+const FILTERS: {id: Filter; label: string}[] = [
+  {id: "all", label: "All"},
+  {id: "active", label: "In progress"},
+  {id: "attention", label: "Needs attention"},
+  {id: "ready", label: "Ready to upload"},
+];
+const SORTS: {id: Sort; label: string}[] = [
+  {id: "newest", label: "Newest"},
+  {id: "oldest", label: "Oldest"},
+  {id: "name", label: "Name"},
+  {id: "progress", label: "Progress"},
+];
+type VideoOnly = Extract<VideoRow, {kind: "video"}>;
+const doneShare = (v: VideoOnly) => (v.steps.length ? v.steps.filter((x) => x.status === "done").length / v.steps.length : 0);
+/** Three groups that never overlap: something wrong first, then all done, then the rest. */
+const groupOf = (v: VideoOnly): Exclude<Filter, "all"> =>
+  v.steps.some((x) => x.status === "fail" || x.status === "warn") ? "attention" : v.steps.length && v.steps.every((x) => x.status === "done") ? "ready" : "active";
+const matches = (v: VideoOnly, f: Filter) => f === "all" || groupOf(v) === f;
+
+/** Home filters live in the URL hash (#/?q=…&f=…&s=…), so a reload or a shared link keeps them. */
+const useHomeParams = () => {
+  const read = () => new URLSearchParams(location.hash.split("?")[1] ?? "");
+  const [p, setP] = useState(read);
+  useEffect(() => {
+    const f = () => setP(read());
+    addEventListener("hashchange", f);
+    return () => removeEventListener("hashchange", f);
+  }, []);
+  const set = (k: string, val: string, dflt: string) => {
+    const next = read();
+    if (val === dflt) next.delete(k); else next.set(k, val);
+    const qs = next.toString();
+    history.replaceState(null, "", `#/${qs ? `?${qs}` : ""}`);
+    setP(next);
+  };
+  return {q: p.get("q") ?? "", f: (p.get("f") as Filter) ?? "all", s: (p.get("s") as Sort) ?? "newest", view: p.get("v") === "compact" ? "compact" : "cards", set};
+};
+
 const Home = () => {
   const {data, error, at} = usePoll<StatusResponse>("/api/status");
+  const {q, f, s, view, set} = useHomeParams();
+  const all = data?.videos ?? [];
+  const videos = all.filter((v): v is VideoOnly => v.kind === "video");
+  const gallery = all.filter((v) => v.kind === "gallery");
+  const needle = q.trim().toLowerCase();
+  const shown = videos
+    .filter((v) => matches(v, f))
+    .filter((v) => !needle || v.id.includes(needle) || (v.flow ?? "").toLowerCase().includes(needle))
+    .sort((a, b) =>
+      s === "name" ? a.id.localeCompare(b.id)
+      : s === "oldest" ? (a.created ?? 0) - (b.created ?? 0)
+      : s === "progress" ? doneShare(b) - doneShare(a) || (b.created ?? 0) - (a.created ?? 0)
+      : (b.created ?? 0) - (a.created ?? 0));
+  const count = (x: Filter) => videos.filter((v) => matches(v, x)).length;
+  const pill = (on: boolean) => cx("rounded-lg px-3 py-1.5 text-sm font-semibold ring-1 ring-inset transition", on ? "bg-brand-primary_alt text-primary ring-brand-500" : "text-tertiary ring-secondary hover:bg-primary_hover hover:text-secondary");
   return (
     <Shell at={at} error={error}>
       {!data && !error && <LoadingIndicator type="line-spinner" size="md" label="Reading the project…" />}
-      {data && data.videos.length === 0 && (
+      {data && videos.length === 0 && (
         <Card>
           <p className="text-secondary">No videos yet. Start one with:</p>
           <div className="mt-2">
@@ -194,36 +249,95 @@ const Home = () => {
           </div>
         </Card>
       )}
+      {videos.length > 0 && (
+        <div className="mb-4 grid gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => set("q", e.target.value, "")}
+              placeholder={`Search ${videos.length} videos by id or flow`}
+              className="min-w-0 flex-1 basis-64 rounded-lg bg-primary px-3 py-2 text-sm text-primary ring-1 ring-secondary ring-inset placeholder:text-placeholder focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            />
+            <label className="flex items-center gap-2 text-sm text-tertiary">
+              Sort
+              <select value={s} onChange={(e) => set("s", e.target.value, "newest")} className="rounded-lg bg-primary px-2 py-2 text-sm text-primary ring-1 ring-secondary ring-inset focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                {SORTS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter videos">
+            {FILTERS.map((x) => (
+              <button key={x.id} type="button" onClick={() => set("f", x.id, "all")} className={pill(f === x.id)} aria-pressed={f === x.id}>
+                {x.label} <span className="ml-1 tabular-nums text-quaternary">{count(x.id)}</span>
+              </button>
+            ))}
+            <span className="ml-auto flex gap-1" role="group" aria-label="Layout">
+              <button type="button" onClick={() => set("v", "cards", "cards")} className={pill(view === "cards")} aria-pressed={view === "cards"}>Cards</button>
+              <button type="button" onClick={() => set("v", "compact", "cards")} className={pill(view === "compact")} aria-pressed={view === "compact"}>Compact</button>
+            </span>
+          </div>
+        </div>
+      )}
+      {videos.length > 0 && shown.length === 0 && <p className="mb-4 text-sm text-tertiary">No video matches. Clear the search or pick another filter.</p>}
+      {view === "compact" && shown.length > 0 && (
+        <Card>
+          <ul className="grid grid-cols-[minmax(0,1fr)]">
+            {shown.map((v) => {
+              const done = v.steps.filter((x) => x.status === "done").length;
+              const g = groupOf(v);
+              return (
+                <li key={v.id} className="border-b border-secondary last:border-0">
+                  <a href={`#/v/${v.id}`} className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.4fr)] items-center gap-3 rounded-md px-2 py-2.5 hover:bg-primary_hover">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-semibold text-primary">{v.id}</span>
+                      <Badge size="sm" color={g === "ready" ? "success" : g === "attention" ? "warning" : "gray"}>{g === "ready" ? "ready" : g === "attention" ? "check" : "in progress"}</Badge>
+                    </span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-quaternary"><span className="block h-full rounded-full bg-brand-solid" style={{width: `${(done / Math.max(1, v.steps.length)) * 100}%`}} /></span>
+                      <span className="text-xs tabular-nums text-tertiary">{done}/{v.steps.length}</span>
+                    </span>
+                    <span className="flex min-w-0 items-center justify-end gap-2 text-xs text-tertiary">
+                      <span className="truncate">next: {v.next.label}</span>
+                      {v.created ? <span className="shrink-0 tabular-nums text-quaternary">{new Date(v.created).toLocaleDateString()}</span> : null}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
       <div className="grid gap-4">
-        {data?.videos.map((v) =>
-          v.kind === "gallery" ? (
-            <Card key={v.id} title={<span className="flex items-center gap-2">{v.id}<Badge size="sm" color="purple">component gallery</Badge></span>}>
-              <p className="mb-2 text-sm text-tertiary">Every shared component on one timeline. Not a video: no pipeline steps.</p>
-              <Command cmd={v.command} />
-            </Card>
-          ) : (
-            <Card
-              key={v.id}
-              title={
-                <a href={`#/v/${v.id}`} className="flex items-center gap-2 hover:underline">
-                  {v.id}
-                  {v.flow && <Badge size="sm" color="gray" type="color">flow {v.flow}</Badge>}
-                </a>
-              }
-              actions={<Button size="sm" color="secondary" href={`#/v/${v.id}`}>Open</Button>}
-            >
-              <div className="grid gap-3">
-                <Progress steps={v.steps} />
-                <div className="flex flex-wrap gap-1.5">
-                  {v.steps.map((s) => (
-                    <StepChip key={s.key} step={s} />
-                  ))}
-                </div>
-                <NextStep next={v.next} />
+        {view === "cards" && shown.map((v) => (
+          <Card
+            key={v.id}
+            title={
+              <a href={`#/v/${v.id}`} className="flex items-center gap-2 hover:underline">
+                {v.id}
+                {v.flow && <Badge size="sm" color="gray" type="color">flow {v.flow}</Badge>}
+                {v.created ? <span className="text-xs font-normal text-quaternary">{new Date(v.created).toLocaleDateString()}</span> : null}
+              </a>
+            }
+            actions={<Button size="sm" color="secondary" href={`#/v/${v.id}`}>Open</Button>}
+          >
+            <div className="grid gap-3">
+              <Progress steps={v.steps} />
+              <div className="flex flex-wrap gap-1.5">
+                {v.steps.map((st) => (
+                  <StepChip key={st.key} step={st} />
+                ))}
               </div>
-            </Card>
-          ),
-        )}
+              <NextStep next={v.next} />
+            </div>
+          </Card>
+        ))}
+        {f === "all" && !needle && gallery.map((v) => v.kind === "gallery" && (
+          <Card key={v.id} title={<span className="flex items-center gap-2">{v.id}<Badge size="sm" color="purple">component gallery</Badge></span>}>
+            <p className="mb-2 text-sm text-tertiary">Every shared component on one timeline. Not a video: no pipeline steps.</p>
+            <Command cmd={v.command} />
+          </Card>
+        ))}
       </div>
     </Shell>
   );
@@ -534,6 +648,262 @@ const StepsTab = ({v}: {v: VideoState}) => (
   </div>
 );
 
+// ── script tab: narration text, timed against the voice ─────────────────
+type VWord = {text: string; start: number; end: number; line: number};
+type VLine = {scene: string; index: number; text: string; start: number; end: number};
+type VoiceJson = {words?: VWord[]; lines?: VLine[]; audio?: string | null; estimated?: boolean};
+type NarLine = {text: string; fact?: string | null; caption?: string};
+type NarJson = {scenes?: {id: string; lines?: NarLine[]}[]};
+type Fact = {id: string; claim: string; status: string};
+
+const useJson = <T,>(f: FileInfo) => {
+  const [data, setData] = useState<T | null>(null);
+  const key = f ? `${f.path}:${f.mtime}` : "";
+  useEffect(() => {
+    if (!f) { setData(null); return; }
+    fetch(fileUrl(f), {cache: "no-store"}).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => setData(null));
+  }, [key]);
+  return data;
+};
+
+const FACTS_FILE = {path: "docs/facts/facts.json", size: 0, mtime: 0};
+
+const ScriptTab = ({v}: {v: VideoState}) => {
+  const voice = useJson<VoiceJson>(v.files.voiceJson);
+  const nar = useJson<NarJson>(v.files.narrationJson);
+  const facts = useJson<Fact[]>(FACTS_FILE);
+  const audio = useRef<HTMLAudioElement>(null);
+  const [t, setT] = useState(-1);
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => { const a = audio.current; if (a) setT(a.paused && a.currentTime === 0 ? -1 : a.currentTime); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (!nar) return <Card title="Script"><p className="text-sm text-tertiary">No narration.json yet.</p></Card>;
+  const lines = voice?.lines ?? [];
+  const words = voice?.words ?? [];
+  const factOf = (id?: string | null) => (id ? facts?.find((f) => f.id === id) : undefined);
+  const play = (start: number) => { const a = audio.current; if (!a) return; a.currentTime = Math.max(0, start - 0.05); void a.play(); };
+  const real = !!v.voice?.audio && !voice?.estimated;
+  const lang = (nar as {language?: string}).language ?? "en";
+  const wps = lang.startsWith("vi") ? 3.7 : 3.1;
+  const narLines = (nar.scenes ?? []).flatMap((s) => s.lines ?? []);
+  const countWords = (t: string) => t.split(/\s+/).filter(Boolean).length;
+  const totalWords = narLines.reduce((n, l) => n + countWords(l.text), 0);
+  const todo = narLines.filter((l) => /TODO/.test(l.text)).length;
+  const missing = narLines.filter((l) => l.fact && !factOf(l.fact)).length;
+  let g = -1;
+  return (
+    <div className="grid gap-4">
+      <Card title="Script">
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <Badge size="sm" color="gray">{narLines.length} lines · {totalWords} words</Badge>
+        <Badge size="sm" color={real ? "success" : "warning"}>{real ? `voice ${(v.voice?.duration ?? 0).toFixed(1)} s` : `≈ ${(totalWords / wps).toFixed(0)} s estimated (${wps} words/s)`}</Badge>
+        {todo > 0 && <Badge size="sm" color="warning">{todo} TODO</Badge>}
+        {missing > 0 && <Badge size="sm" color="error">{missing} missing fact{missing > 1 ? "s" : ""}</Badge>}
+        {!real && <span className="text-tertiary">No voice yet: timings below are estimates from the text. Run <code className="font-mono">bun run tts {v.id}</code> to hear it.</span>}
+      </div>
+        {v.voice?.audio ? (
+          <div className="sticky top-16 z-10 mb-4 rounded-xl bg-primary/90 py-2 backdrop-blur">
+            <audio ref={audio} key={`${v.voice.audio.path}:${v.voice.audio.mtime}`} src={fileUrl(v.voice.audio)} controls preload="metadata" className="w-full" />
+            <p className="mt-1 text-xs text-tertiary">Click a line to play from it. The word being spoken is highlighted, so you can check the voice against the text.</p>
+          </div>
+        ) : null}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
+          {(nar.scenes ?? []).map((s) => (
+            <section key={s.id}>
+              <h3 className="mb-2 font-mono text-xs tracking-wider text-tertiary uppercase">{s.id}</h3>
+              <ol className="grid grid-cols-[minmax(0,1fr)] gap-2">
+                {(s.lines ?? []).map((l, i) => {
+                  g += 1;
+                  const gi = g;
+                  const vl = lines[gi];
+                  const lw = words.filter((w) => w.line === gi);
+                  const active = !!vl && t >= vl.start && t < vl.end;
+                  const fact = factOf(l.fact);
+                  return (
+                    <li key={i} className="min-w-0">
+                      <button type="button" onClick={() => real && vl && play(vl.start)} className={cx("w-full min-w-0 overflow-hidden rounded-lg p-3 text-left ring-1 ring-inset transition", active ? "bg-brand-primary_alt ring-brand-500" : /TODO/.test(l.text) ? "ring-[color:var(--color-fg-warning-secondary)]" : "ring-secondary hover:bg-primary_hover")}>
+                        <p className="text-md leading-relaxed text-primary">
+                          {(() => {
+                            // Show the script as written (with punctuation); borrow each word's timing
+                            // when the token count matches the timed words, which it does for plain text.
+                            const toks = l.text.split(/\s+/).filter(Boolean);
+                            if (!lw.length || toks.length !== lw.length) return l.text;
+                            return toks.map((tok, k) => {
+                              const w = lw[k];
+                              const on = t >= w.start && t < w.end;
+                              return (
+                                <span key={k}>
+                                  <span className={cx("rounded-sm", on && "bg-brand-solid text-white shadow-[0_0_0_2px_var(--color-bg-brand-solid)]")}>{tok}</span>{k < toks.length - 1 ? " " : ""}
+                                </span>
+                              );
+                            });
+                          })()}
+                        </p>
+                        {l.caption && <p className="mt-1 text-sm text-tertiary">{l.caption}</p>}
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-tertiary">
+                          {real && vl ? <span className="tabular-nums">{vl.start.toFixed(1)}–{vl.end.toFixed(1)} s</span> : <span className="tabular-nums">≈ {(countWords(l.text) / wps).toFixed(1)} s</span>}
+                          <span>{l.text.split(/\s+/).filter(Boolean).length} words</span>
+                          {l.fact ? (
+                            <Badge size="sm" color={fact?.status === "verified" ? "success" : fact ? "warning" : "error"}>{l.fact}{fact ? ` · ${fact.status}` : " · missing"}</Badge>
+                          ) : (
+                            <Badge size="sm" color="gray">no fact</Badge>
+                          )}
+                          {fact && <span className="min-w-0 flex-1 basis-60 truncate" title={fact.claim}>{fact.claim}</span>}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ── storyboard tab: the shot list, reviewed before scene code ──────────────
+type SbShot = {id: string; line: number; anchor?: string | null; camera: string; onScreen: string; text?: string | null; visual?: string; transition?: string; sfx?: string | null; notes?: string; status: "planned" | "approved" | "built"};
+type SbJson = {shots?: SbShot[]};
+const FPS_UI = 30;
+const norm = (x: string) => x.toLowerCase().normalize("NFC").replace(/[^\p{L}\p{N}%]+/gu, "");
+
+/** A frame cut from the current render at time `at` (seconds), cache-busted by the mp4's mtime. */
+const frameUrl = (id: string, at: number, mtime: number) => {
+  const q = new URLSearchParams({at: at.toFixed(1), v: String(Math.round(mtime))});
+  if (TOKEN) q.set("t", TOKEN);
+  return `/api/frame/${id}?${q}`;
+};
+
+const StoryboardTab = ({v}: {v: VideoState}) => {
+  const sb = useJson<SbJson>(v.files.storyboard ?? null);
+  const voice = useJson<VoiceJson>(v.files.voiceJson);
+  const nar = useJson<NarJson>(v.files.narrationJson);
+  const mp4 = v.files.upload ?? v.files.loud ?? v.files.render;
+  const media = useRef<HTMLMediaElement | null>(null);
+  const [t, setT] = useState(-1);
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => { const a = media.current; if (a) setT(a.paused && a.currentTime === 0 ? -1 : a.currentTime); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (!v.files.storyboard) {
+    return (
+      <Card title="Storyboard">
+        <p className="mb-3 text-sm text-secondary">No storyboard yet. After the voice exists, plan every shot (camera, what is on screen, on-frame text, transition, sfx) and get it approved before building scenes.</p>
+        <Command cmd={`bun run storyboard ${v.id} --init`} />
+        <p className="mt-3 text-xs text-tertiary">Schema and rules: docs/storyboard.md</p>
+      </Card>
+    );
+  }
+  if (!sb) return <Card title="Storyboard"><LoadingIndicator type="line-spinner" size="sm" label="Reading storyboard.json…" /></Card>;
+  const lineTexts = (nar?.scenes ?? []).flatMap((s) => (s.lines ?? []).map((l) => ({scene: s.id, text: l.text})));
+  const vlines = voice?.lines ?? [];
+  const words = voice?.words ?? [];
+  const real = !!voice && !voice.estimated;
+  const shots = sb.shots ?? [];
+  const startOf = (s: SbShot): number | null => {
+    const l = vlines[s.line];
+    if (!l) return null;
+    if (!s.anchor) return l.start;
+    const want = s.anchor.split(/\s+/).map(norm).filter(Boolean);
+    const lw = words.filter((w) => w.line === s.line);
+    for (let i = 0; i + want.length <= lw.length; i++) if (want.every((x, k) => norm(lw[i + k].text) === x)) return lw[i].start;
+    return l.start;
+  };
+  const starts = shots.map(startOf);
+  const total = (v.voice?.duration ?? 0) + 3;
+  const endOf = (i: number) => starts.slice(i + 1).find((x) => x !== null) ?? total;
+  const stillAt = (a: number, b: number) => {
+    const all = v.files.stills.map((f) => ({f, frame: Number(/(\d+)\.(png|jpe?g)$/i.exec(f.path)?.[1] ?? NaN)})).filter((x) => !Number.isNaN(x.frame));
+    const inside = all.filter((x) => x.frame / FPS_UI >= a && x.frame / FPS_UI < b);
+    return inside.sort((x, y) => Math.abs(x.frame / FPS_UI - (a + b) / 2) - Math.abs(y.frame / FPS_UI - (a + b) / 2))[0]?.f ?? null;
+  };
+  const counts = {planned: shots.filter((x) => x.status === "planned").length, approved: shots.filter((x) => x.status === "approved").length, built: shots.filter((x) => x.status === "built").length};
+  const play = (at: number | null) => { const a = media.current; if (!a || at === null) return; a.currentTime = Math.max(0, at - 0.05); void a.play(); };
+  const statusColor = {planned: "warning", approved: "brand", built: "success"} as const;
+  return (
+    <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="lg:sticky lg:top-16 lg:self-start">
+        <Card title="Playback">
+          {mp4 ? (
+            <video ref={(el) => { media.current = el; }} key={`${mp4.path}:${mp4.mtime}`} src={fileUrl(mp4)} controls preload="metadata" className="aspect-[9/16] w-full rounded-lg bg-black" />
+          ) : v.voice?.audio ? (
+            <audio ref={(el) => { media.current = el; }} key={`${v.voice.audio.path}:${v.voice.audio.mtime}`} src={fileUrl(v.voice.audio)} controls preload="metadata" className="w-full" />
+          ) : (
+            <p className="text-sm text-tertiary">No render or voice yet.</p>
+          )}
+          <p className="mt-2 text-xs text-tertiary">Click a shot to play it. {mp4 ? "The render shows what each shot looks like now." : "No render yet: you hear the voice the shot sits on."}</p>
+        </Card>
+      </div>
+      <Card title="Storyboard">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <Badge size="sm" color="gray">{shots.length} shots</Badge>
+          {counts.planned > 0 && <Badge size="sm" color="warning">{counts.planned} planned</Badge>}
+          {counts.approved > 0 && <Badge size="sm" color="brand">{counts.approved} approved</Badge>}
+          {counts.built > 0 && <Badge size="sm" color="success">{counts.built} built</Badge>}
+          {!real && <span className="text-tertiary">Timings are estimates until <code className="font-mono">bun run tts {v.id}</code>.</span>}
+          <span className="text-tertiary">Check it in the terminal: <code className="font-mono">bun run storyboard {v.id}</code></span>
+        </div>
+        {counts.planned > 0 && (
+          <p className="mb-4 rounded-lg bg-warning-primary p-3 text-sm text-warning-primary ring-1 ring-inset ring-[color:var(--color-fg-warning-secondary)]">
+            {counts.planned} shot{counts.planned > 1 ? "s" : ""} waiting for your approval. The preview is read-only: tell your agent "approve s01 to s{String(shots.length).padStart(2, "0")}" (or name the shots to change), or set <code className="font-mono">status</code> to <code className="font-mono">approved</code> in <code className="font-mono">src/videos/{v.id}/storyboard.json</code>. Scenes are built only from approved shots.
+          </p>
+        )}
+        {!mp4 && shots.some((x) => x.status !== "planned") && (
+          <p className="mb-4 text-xs text-tertiary">A shot shows its still once one exists: <code className="font-mono">bun run still {v.id} --frame=N</code> (N is shown on each shot).</p>
+        )}
+        <ol className="grid grid-cols-[minmax(0,1fr)] gap-3">
+          {shots.map((s, i) => {
+            const a = starts[i];
+            const b = endOf(i);
+            const active = a !== null && t >= a && t < b;
+            const still = a !== null ? stillAt(a, b) : null;
+            const line = lineTexts[s.line];
+            const todo = /TODO/.test(`${s.camera} ${s.onScreen}`);
+            return (
+              <li key={s.id} className="min-w-0">
+                <button type="button" onClick={() => play(a)} className={cx("grid w-full min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-3 overflow-hidden rounded-lg p-3 text-left ring-1 ring-inset transition sm:grid-cols-[96px_minmax(0,1fr)]", active ? "bg-brand-primary_alt ring-brand-500" : todo ? "ring-[color:var(--color-fg-warning-secondary)]" : "ring-secondary hover:bg-primary_hover")}>
+                  <div className="aspect-[9/16] w-full overflow-hidden rounded-md bg-secondary ring-1 ring-secondary">
+                    {mp4 && a !== null ? <img src={frameUrl(v.id, (a + b) / 2, mp4.mtime)} alt="" loading="lazy" className="h-full w-full object-cover" /> : still ? <img src={fileUrl(still)} alt="" className="h-full w-full object-cover" /> : (
+                      <div className="flex h-full flex-col items-center justify-center gap-1 p-1 text-center text-[10px] leading-tight text-quaternary">
+                        <span className="font-semibold text-tertiary">not built</span>
+                        {a !== null && <span className="break-all font-mono">--frame={Math.round(((a + b) / 2) * FPS_UI)}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-mono font-semibold text-primary">{s.id}</span>
+                      <Badge size="sm" color={statusColor[s.status] ?? "gray"}>{s.status}</Badge>
+                      {a !== null && <span className="text-tertiary tabular-nums">{a.toFixed(1)}–{b.toFixed(1)} s</span>}
+                      {s.transition && <Badge size="sm" color="gray">{s.transition}</Badge>}
+                      {s.visual && <Badge size="sm" color="gray">{s.visual}</Badge>}
+                      {s.sfx && <Badge size="sm" color="gray">sfx: {s.sfx}</Badge>}
+                    </div>
+                    <p className="mb-2 text-sm text-secondary italic">“{line?.text ?? "(no such line)"}”{s.anchor && <span className="not-italic text-tertiary"> · from “{s.anchor}”</span>}</p>
+                    <dl className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-2 gap-y-1 text-sm">
+                      <dt className="text-tertiary">Camera</dt><dd className="text-primary">{s.camera}</dd>
+                      <dt className="text-tertiary">Screen</dt><dd className="text-primary">{s.onScreen}</dd>
+                      {s.text && <><dt className="text-tertiary">Text</dt><dd className="font-mono text-xs text-primary">{s.text}</dd></>}
+                      {s.notes && <><dt className="text-tertiary">Notes</dt><dd className="text-secondary">{s.notes}</dd></>}
+                    </dl>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
+    </div>
+  );
+};
+
 const VideoPage = ({id}: {id: string}) => {
   const {data: v, error, at, reload} = usePoll<VideoState>(`/api/video/${id}`);
   return (
@@ -552,8 +922,10 @@ const VideoPage = ({id}: {id: string}) => {
             <Progress steps={v.steps} />
           </div>
           <Tabs defaultSelectedKey="media">
-            <TabList type="button-gray" size="sm" className="mb-4 overflow-x-auto" items={[{id: "media", label: "Media"}, {id: "steps", label: "Steps"}, {id: "handoff", label: "Hand-off"}, {id: "checks", label: "Checks"}]} />
+            <TabList type="button-gray" size="sm" className="mb-4 overflow-x-auto" items={[{id: "media", label: "Media"}, {id: "script", label: "Script"}, {id: "storyboard", label: "Storyboard"}, {id: "steps", label: "Steps"}, {id: "handoff", label: "Hand-off"}, {id: "checks", label: "Checks"}]} />
             <TabPanel id="media"><MediaTab v={v} /></TabPanel>
+            <TabPanel id="script"><ScriptTab v={v} /></TabPanel>
+            <TabPanel id="storyboard"><StoryboardTab v={v} /></TabPanel>
             <TabPanel id="steps"><StepsTab v={v} /></TabPanel>
             <TabPanel id="handoff"><HandoffTab v={v} /></TabPanel>
             <TabPanel id="checks"><ChecksTab v={v} reload={reload} /></TabPanel>

@@ -2,7 +2,7 @@
 
 **Shape:** a person alone inside one scene with no map → time counted by objects in a corner → events happen in the same world → only at the end the camera pulls out to reveal where they were all along
 
-**Beats** (scene ids `bun run new` scaffolds): `hook, setup, ordeal, loss, alone, landfall, payoff, share` · spoken numbering: **no. The object counter replaces it** · has a turn: **yes (the reveal)** · fits visuals: illustrated-scene, b-roll
+**Beats** (scene ids `bun run new` scaffolds): `hook, setup, ordeal, loss, alone, landfall, payoff, share` · spoken numbering: **no. The object counter replaces it** · has a turn: **yes (the reveal)** · fits visuals: illustrated-scene, b-roll, globe
 
 ## When to use
 

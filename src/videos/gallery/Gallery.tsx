@@ -1,10 +1,12 @@
 import React from "react";
 import {AbsoluteFill, Sequence} from "remotion";
 import {Label} from "./Label";
+import {MAP_SHOTS} from "./map-shots";
+import {GLOBE_SHOTS} from "./globe-shots";
 import {BirdsClouds, CameraPush, CampDusk, DaySea, DuskSun, FigureGait, FigureRest, FishSchool, GrainVignette, NightMoon, PersonPoses, Prairie, SHOT_FRAMES, StormRain} from "./shots";
 
 /** Each entry: the shot, the import path it demonstrates, and a one-line note. */
-export const SHOTS: {Shot: React.FC; path: string; note: string}[] = [
+export const SHOTS: {Shot: React.FC; path: string; note: string; frames?: number}[] = [
   {Shot: DaySea, path: "shared/nature: Sky, Clouds, Sea", note: 'sky="day" with Sun and glitter'},
   {Shot: DuskSun, path: "shared/nature: Sun, SUNS.dusk", note: "the sun sinks behind the horizon"},
   {Shot: NightMoon, path: "shared/nature: Moon, Stars", note: 'sky="night", moon glitter'},
@@ -18,15 +20,19 @@ export const SHOTS: {Shot: React.FC; path: string; note: string}[] = [
   {Shot: FigureGait, path: "shared/figures/Figure: gait", note: "walk, run, slump, crouch; speed plants the feet"},
   {Shot: FigureRest, path: "shared/figures/Figure: rest", note: 'seat="crate|log|stool", ground, kneel, lie'},
   {Shot: CampDusk, path: "shared/props: Wagon, Cannon, Bridge", note: 'sky="dusk" marsh, grade={GRADES.dusk} rim'},
+  ...[...MAP_SHOTS, ...GLOBE_SHOTS].map((x) => ({Shot: x.Component, path: x.label, note: x.note, frames: x.frames})),
 ];
 
-export const GALLERY_FRAMES = SHOTS.length * SHOT_FRAMES;
+/** Where each shot starts: shots keep their own length (map and globe moves need more than 3 s). */
+const STARTS = SHOTS.reduce<number[]>((acc, s, i) => [...acc, i === 0 ? 0 : acc[i - 1] + (SHOTS[i - 1].frames ?? SHOT_FRAMES)], []);
 
-/** Browse every reusable illustrated component, ~3 s each: `bun run dev gallery`. */
+export const GALLERY_FRAMES = STARTS[STARTS.length - 1] + (SHOTS[SHOTS.length - 1].frames ?? SHOT_FRAMES);
+
+/** Browse every reusable component (illustrated world, maps, globe): `bun run dev gallery`. */
 export const Gallery: React.FC = () => (
   <AbsoluteFill style={{background: "#000"}}>
-    {SHOTS.map(({Shot, path, note}, i) => (
-      <Sequence key={path} from={i * SHOT_FRAMES} durationInFrames={SHOT_FRAMES}>
+    {SHOTS.map(({Shot, path, note, frames}, i) => (
+      <Sequence key={path} from={STARTS[i]} durationInFrames={frames ?? SHOT_FRAMES}>
         <Shot />
         <Label path={path} note={note} n={i + 1} of={SHOTS.length} />
       </Sequence>

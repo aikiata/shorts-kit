@@ -108,6 +108,12 @@ bun run tts <id>
   a mispronunciation by **rewriting the line** or adding `pronounce`, not by re-rolling.
 - Then `bun run lint <id>` again: the duration checks need `voice.json`.
 
+## 5b. Storyboard: `sk-scene`
+
+After the voice, plan every shot and get it approved before writing scene code:
+`bun run storyboard <id> --init`, fill it in, review it in `bun run preview`
+(Storyboard tab), set the shots to `approved`. See [`storyboard.md`](storyboard.md).
+
 ## 6. Scenes: `sk-scene`
 
 ```bash

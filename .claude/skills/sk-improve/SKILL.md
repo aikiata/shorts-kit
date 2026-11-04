@@ -69,6 +69,17 @@ live one, both silently.
 5. **Is the lesson a new rule, or a reason to relax or delete one?** If yes,
    continue below. If not, stop here.
 
+## Adding, removing or reordering a pipeline step
+
+The steps the preview shows (and the `sk-pipeline` table) come from
+`docs/pipeline.json`. To add a step, add one entry with `key`, `n` (its position: 11.5
+sits between 11 and 12), `label`, `skill`, `command` (use `{id}`), and an `evidence`
+rule the preview can check on disk: `{"file": "out/{id}/x.png"}`,
+`{"glob": "out/{id}/*-yt.mp4"}`, or `{"json": "src/videos/{id}/x.json", "nonEmpty": "items"}`.
+To drop a step, delete its entry. Then add the row to the `sk-pipeline` table, say in
+which skill the step is done, log the change in `SOUL.md`, and open `bun run preview` to
+check the step appears with the right status.
+
 ## Changing a rule
 
 1. **Find every place it lives:**

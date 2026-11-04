@@ -1,0 +1,8 @@
+{
+  "shots": [
+    {"id": "mekong-delta", "lon": 106.3, "lat": 10.4, "spanLon": 3, "zoom": 9, "pad": 0.06},
+    {"id": "delta-mid", "lon": 106.443, "lat": 10.532, "spanLon": 1.55, "zoom": 10, "pad": 0.06},
+    {"id": "saigon-wide", "lon": 106.591, "lat": 10.67, "spanLon": 0.78, "zoom": 11, "pad": 0.06},
+    {"id": "saigon", "lon": 106.71, "lat": 10.78, "spanLon": 0.45, "zoom": 12, "pad": 0.06}
+  ]
+}

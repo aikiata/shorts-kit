@@ -7,3 +7,7 @@ public/audio/
 !.env.example
 .DS_Store
 *.log
+
+# Satellite mosaics are rebuilt by `bun run satellite <id>`
+public/img/sat/*
+!public/img/sat/README.md

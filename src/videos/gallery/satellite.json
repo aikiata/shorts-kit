@@ -1,0 +1,41 @@
+{
+  "attribution": "EOxCloudless https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016) released under Creative Commons Attribution 4.0 International License",
+  "mosaics": [
+    {
+      "id": "mekong-delta",
+      "href": "img/gallery/mekong-delta.jpg",
+      "zoom": 9,
+      "x": 51712,
+      "y": 30208,
+      "w": 768,
+      "h": 1280
+    },
+    {
+      "id": "delta-mid",
+      "href": "img/gallery/delta-mid.jpg",
+      "zoom": 10,
+      "x": 51968,
+      "y": 30528,
+      "w": 384,
+      "h": 640
+    },
+    {
+      "id": "saigon-wide",
+      "href": "img/gallery/saigon-wide.jpg",
+      "zoom": 11,
+      "x": 52064,
+      "y": 30656,
+      "w": 192,
+      "h": 320
+    },
+    {
+      "id": "saigon",
+      "href": "img/gallery/saigon.jpg",
+      "zoom": 12,
+      "x": 52144,
+      "y": 30704,
+      "w": 96,
+      "h": 176
+    }
+  ]
+}
