@@ -1,0 +1,18 @@
+{
+  "id": "_template",
+  "flow": "A",
+  "visual": [],
+  "language": "en",
+  "voice": {
+    "engine": "say",
+    "voice": "Samantha",
+    "tempo": 1
+  },
+  "pause": {"line": 0.5, "scene": 0.9},
+  "outroHold": 3,
+  "pronounce": {},
+  "spelling": {},
+  "scenes": [
+    {"id": "hook", "lines": [{"text": "TODO write the hook line.", "fact": ""}]}
+  ]
+}

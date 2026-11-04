@@ -1,0 +1,865 @@
+{
+  "hash": "9262a66b0a279d4d",
+  "engine": "say:Samantha",
+  "duration": 40.5,
+  "audio": "audio/example/voice.mp3",
+  "words": [
+    {
+      "text": "Sunlight",
+      "start": 0,
+      "end": 0.408,
+      "line": 0
+    },
+    {
+      "text": "looks",
+      "start": 0.443,
+      "end": 0.728,
+      "line": 0
+    },
+    {
+      "text": "white",
+      "start": 0.753,
+      "end": 1.12,
+      "line": 0,
+      "brk": "clause"
+    },
+    {
+      "text": "so",
+      "start": 1.152,
+      "end": 1.315,
+      "line": 0
+    },
+    {
+      "text": "why",
+      "start": 1.329,
+      "end": 1.533,
+      "line": 0
+    },
+    {
+      "text": "is",
+      "start": 1.551,
+      "end": 1.714,
+      "line": 0
+    },
+    {
+      "text": "the",
+      "start": 1.728,
+      "end": 1.931,
+      "line": 0
+    },
+    {
+      "text": "clear",
+      "start": 1.949,
+      "end": 2.235,
+      "line": 0
+    },
+    {
+      "text": "sky",
+      "start": 2.259,
+      "end": 2.463,
+      "line": 0
+    },
+    {
+      "text": "above",
+      "start": 2.481,
+      "end": 2.766,
+      "line": 0
+    },
+    {
+      "text": "you",
+      "start": 2.791,
+      "end": 2.995,
+      "line": 0
+    },
+    {
+      "text": "blue",
+      "start": 3.012,
+      "end": 3.257,
+      "line": 0
+    },
+    {
+      "text": "and",
+      "start": 3.278,
+      "end": 3.482,
+      "line": 0
+    },
+    {
+      "text": "not",
+      "start": 3.5,
+      "end": 3.704,
+      "line": 0
+    },
+    {
+      "text": "white",
+      "start": 3.721,
+      "end": 4.007,
+      "line": 0
+    },
+    {
+      "text": "too",
+      "start": 4.031,
+      "end": 4.398,
+      "line": 0,
+      "brk": "sentence"
+    },
+    {
+      "text": "White",
+      "start": 5.33,
+      "end": 5.606,
+      "line": 1
+    },
+    {
+      "text": "sunlight",
+      "start": 5.63,
+      "end": 6.024,
+      "line": 1
+    },
+    {
+      "text": "carries",
+      "start": 6.058,
+      "end": 6.413,
+      "line": 1
+    },
+    {
+      "text": "all",
+      "start": 6.444,
+      "end": 6.641,
+      "line": 1
+    },
+    {
+      "text": "the",
+      "start": 6.658,
+      "end": 6.855,
+      "line": 1
+    },
+    {
+      "text": "colours",
+      "start": 6.872,
+      "end": 7.227,
+      "line": 1
+    },
+    {
+      "text": "of",
+      "start": 7.258,
+      "end": 7.416,
+      "line": 1
+    },
+    {
+      "text": "the",
+      "start": 7.429,
+      "end": 7.627,
+      "line": 1
+    },
+    {
+      "text": "rainbow",
+      "start": 7.644,
+      "end": 8.077,
+      "line": 1,
+      "brk": "clause"
+    },
+    {
+      "text": "so",
+      "start": 8.115,
+      "end": 8.273,
+      "line": 1
+    },
+    {
+      "text": "why",
+      "start": 8.286,
+      "end": 8.483,
+      "line": 1
+    },
+    {
+      "text": "does",
+      "start": 8.501,
+      "end": 8.737,
+      "line": 1
+    },
+    {
+      "text": "the",
+      "start": 8.758,
+      "end": 8.955,
+      "line": 1
+    },
+    {
+      "text": "sky",
+      "start": 8.972,
+      "end": 9.169,
+      "line": 1
+    },
+    {
+      "text": "pick",
+      "start": 9.186,
+      "end": 9.423,
+      "line": 1
+    },
+    {
+      "text": "out",
+      "start": 9.443,
+      "end": 9.64,
+      "line": 1
+    },
+    {
+      "text": "the",
+      "start": 9.657,
+      "end": 9.854,
+      "line": 1
+    },
+    {
+      "text": "blue",
+      "start": 9.872,
+      "end": 10.266,
+      "line": 1,
+      "brk": "sentence"
+    },
+    {
+      "text": "Each",
+      "start": 11.2,
+      "end": 11.438,
+      "line": 2
+    },
+    {
+      "text": "colour",
+      "start": 11.459,
+      "end": 11.776,
+      "line": 2
+    },
+    {
+      "text": "travels",
+      "start": 11.803,
+      "end": 12.16,
+      "line": 2
+    },
+    {
+      "text": "as",
+      "start": 12.191,
+      "end": 12.35,
+      "line": 2
+    },
+    {
+      "text": "a",
+      "start": 12.363,
+      "end": 12.482,
+      "line": 2
+    },
+    {
+      "text": "wave",
+      "start": 12.493,
+      "end": 12.81,
+      "line": 2,
+      "brk": "clause"
+    },
+    {
+      "text": "and",
+      "start": 12.837,
+      "end": 13.035,
+      "line": 2
+    },
+    {
+      "text": "blue",
+      "start": 13.053,
+      "end": 13.291,
+      "line": 2
+    },
+    {
+      "text": "light",
+      "start": 13.311,
+      "end": 13.589,
+      "line": 2
+    },
+    {
+      "text": "travels",
+      "start": 13.613,
+      "end": 13.97,
+      "line": 2
+    },
+    {
+      "text": "in",
+      "start": 14.001,
+      "end": 14.159,
+      "line": 2
+    },
+    {
+      "text": "shorter",
+      "start": 14.173,
+      "end": 14.53,
+      "line": 2
+    },
+    {
+      "text": "waves",
+      "start": 14.561,
+      "end": 14.838,
+      "line": 2
+    },
+    {
+      "text": "than",
+      "start": 14.862,
+      "end": 15.1,
+      "line": 2
+    },
+    {
+      "text": "red",
+      "start": 15.121,
+      "end": 15.319,
+      "line": 2
+    },
+    {
+      "text": "light",
+      "start": 15.336,
+      "end": 15.772,
+      "line": 2,
+      "brk": "sentence"
+    },
+    {
+      "text": "The",
+      "start": 16.71,
+      "end": 16.905,
+      "line": 3
+    },
+    {
+      "text": "air",
+      "start": 16.922,
+      "end": 17.118,
+      "line": 3
+    },
+    {
+      "text": "above",
+      "start": 17.135,
+      "end": 17.408,
+      "line": 3
+    },
+    {
+      "text": "you",
+      "start": 17.432,
+      "end": 17.627,
+      "line": 3
+    },
+    {
+      "text": "is",
+      "start": 17.644,
+      "end": 17.8,
+      "line": 3
+    },
+    {
+      "text": "full",
+      "start": 17.814,
+      "end": 18.048,
+      "line": 3
+    },
+    {
+      "text": "of",
+      "start": 18.069,
+      "end": 18.225,
+      "line": 3
+    },
+    {
+      "text": "gas",
+      "start": 18.239,
+      "end": 18.434,
+      "line": 3
+    },
+    {
+      "text": "molecules",
+      "start": 18.451,
+      "end": 18.959,
+      "line": 3,
+      "brk": "clause"
+    },
+    {
+      "text": "and",
+      "start": 19.003,
+      "end": 19.198,
+      "line": 3
+    },
+    {
+      "text": "all",
+      "start": 19.215,
+      "end": 19.41,
+      "line": 3
+    },
+    {
+      "text": "that",
+      "start": 19.427,
+      "end": 19.662,
+      "line": 3
+    },
+    {
+      "text": "sunlight",
+      "start": 19.682,
+      "end": 20.073,
+      "line": 3
+    },
+    {
+      "text": "has",
+      "start": 20.107,
+      "end": 20.302,
+      "line": 3
+    },
+    {
+      "text": "to",
+      "start": 20.319,
+      "end": 20.475,
+      "line": 3
+    },
+    {
+      "text": "pass",
+      "start": 20.489,
+      "end": 20.723,
+      "line": 3
+    },
+    {
+      "text": "through",
+      "start": 20.743,
+      "end": 21.095,
+      "line": 3
+    },
+    {
+      "text": "them",
+      "start": 21.126,
+      "end": 21.516,
+      "line": 3,
+      "brk": "sentence"
+    },
+    {
+      "text": "Gas",
+      "start": 22.45,
+      "end": 22.648,
+      "line": 4
+    },
+    {
+      "text": "molecules",
+      "start": 22.665,
+      "end": 23.101,
+      "line": 4
+    },
+    {
+      "text": "scatter",
+      "start": 23.139,
+      "end": 23.495,
+      "line": 4
+    },
+    {
+      "text": "blue",
+      "start": 23.526,
+      "end": 23.764,
+      "line": 4
+    },
+    {
+      "text": "light",
+      "start": 23.784,
+      "end": 24.061,
+      "line": 4
+    },
+    {
+      "text": "in",
+      "start": 24.085,
+      "end": 24.244,
+      "line": 4
+    },
+    {
+      "text": "all",
+      "start": 24.258,
+      "end": 24.456,
+      "line": 4
+    },
+    {
+      "text": "directions",
+      "start": 24.473,
+      "end": 24.948,
+      "line": 4
+    },
+    {
+      "text": "more",
+      "start": 24.989,
+      "end": 25.227,
+      "line": 4
+    },
+    {
+      "text": "than",
+      "start": 25.247,
+      "end": 25.485,
+      "line": 4
+    },
+    {
+      "text": "the",
+      "start": 25.506,
+      "end": 25.704,
+      "line": 4
+    },
+    {
+      "text": "other",
+      "start": 25.721,
+      "end": 25.998,
+      "line": 4
+    },
+    {
+      "text": "colours",
+      "start": 26.022,
+      "end": 26.457,
+      "line": 4,
+      "brk": "clause"
+    },
+    {
+      "text": "so",
+      "start": 26.495,
+      "end": 26.654,
+      "line": 4
+    },
+    {
+      "text": "blue",
+      "start": 26.668,
+      "end": 26.905,
+      "line": 4
+    },
+    {
+      "text": "reaches",
+      "start": 26.926,
+      "end": 27.282,
+      "line": 4
+    },
+    {
+      "text": "you",
+      "start": 27.313,
+      "end": 27.511,
+      "line": 4
+    },
+    {
+      "text": "from",
+      "start": 27.528,
+      "end": 27.766,
+      "line": 4
+    },
+    {
+      "text": "the",
+      "start": 27.786,
+      "end": 27.984,
+      "line": 4
+    },
+    {
+      "text": "whole",
+      "start": 28.002,
+      "end": 28.279,
+      "line": 4
+    },
+    {
+      "text": "sky",
+      "start": 28.303,
+      "end": 28.659,
+      "line": 4,
+      "brk": "sentence"
+    },
+    {
+      "text": "Near",
+      "start": 29.59,
+      "end": 29.823,
+      "line": 5
+    },
+    {
+      "text": "the",
+      "start": 29.844,
+      "end": 30.038,
+      "line": 5
+    },
+    {
+      "text": "horizon",
+      "start": 30.055,
+      "end": 30.405,
+      "line": 5
+    },
+    {
+      "text": "the",
+      "start": 30.435,
+      "end": 30.63,
+      "line": 5
+    },
+    {
+      "text": "sky",
+      "start": 30.647,
+      "end": 30.841,
+      "line": 5
+    },
+    {
+      "text": "looks",
+      "start": 30.858,
+      "end": 31.13,
+      "line": 5
+    },
+    {
+      "text": "paler",
+      "start": 31.154,
+      "end": 31.504,
+      "line": 5,
+      "brk": "clause"
+    },
+    {
+      "text": "because",
+      "start": 31.534,
+      "end": 31.884,
+      "line": 5
+    },
+    {
+      "text": "that",
+      "start": 31.915,
+      "end": 32.148,
+      "line": 5
+    },
+    {
+      "text": "light",
+      "start": 32.168,
+      "end": 32.44,
+      "line": 5
+    },
+    {
+      "text": "crossed",
+      "start": 32.464,
+      "end": 32.814,
+      "line": 5
+    },
+    {
+      "text": "more",
+      "start": 32.844,
+      "end": 33.078,
+      "line": 5
+    },
+    {
+      "text": "air",
+      "start": 33.098,
+      "end": 33.292,
+      "line": 5
+    },
+    {
+      "text": "and",
+      "start": 33.309,
+      "end": 33.504,
+      "line": 5
+    },
+    {
+      "text": "its",
+      "start": 33.521,
+      "end": 33.715,
+      "line": 5
+    },
+    {
+      "text": "blue",
+      "start": 33.732,
+      "end": 33.965,
+      "line": 5
+    },
+    {
+      "text": "was",
+      "start": 33.986,
+      "end": 34.18,
+      "line": 5
+    },
+    {
+      "text": "scattered",
+      "start": 34.197,
+      "end": 34.625,
+      "line": 5
+    },
+    {
+      "text": "many",
+      "start": 34.662,
+      "end": 34.895,
+      "line": 5
+    },
+    {
+      "text": "times",
+      "start": 34.915,
+      "end": 35.188,
+      "line": 5
+    },
+    {
+      "text": "in",
+      "start": 35.211,
+      "end": 35.367,
+      "line": 5
+    },
+    {
+      "text": "many",
+      "start": 35.38,
+      "end": 35.614,
+      "line": 5
+    },
+    {
+      "text": "directions",
+      "start": 35.634,
+      "end": 36.256,
+      "line": 5,
+      "brk": "sentence"
+    },
+    {
+      "text": "Send",
+      "start": 37.21,
+      "end": 37.437,
+      "line": 6
+    },
+    {
+      "text": "this",
+      "start": 37.457,
+      "end": 37.684,
+      "line": 6
+    },
+    {
+      "text": "to",
+      "start": 37.704,
+      "end": 37.855,
+      "line": 6
+    },
+    {
+      "text": "the",
+      "start": 37.868,
+      "end": 38.057,
+      "line": 6
+    },
+    {
+      "text": "next",
+      "start": 38.074,
+      "end": 38.301,
+      "line": 6
+    },
+    {
+      "text": "person",
+      "start": 38.321,
+      "end": 38.623,
+      "line": 6
+    },
+    {
+      "text": "who",
+      "start": 38.65,
+      "end": 38.839,
+      "line": 6
+    },
+    {
+      "text": "asks",
+      "start": 38.855,
+      "end": 39.082,
+      "line": 6
+    },
+    {
+      "text": "you",
+      "start": 39.102,
+      "end": 39.291,
+      "line": 6
+    },
+    {
+      "text": "why",
+      "start": 39.308,
+      "end": 39.497,
+      "line": 6
+    },
+    {
+      "text": "the",
+      "start": 39.513,
+      "end": 39.702,
+      "line": 6
+    },
+    {
+      "text": "sky",
+      "start": 39.719,
+      "end": 39.908,
+      "line": 6
+    },
+    {
+      "text": "is",
+      "start": 39.924,
+      "end": 40.076,
+      "line": 6
+    },
+    {
+      "text": "blue",
+      "start": 40.089,
+      "end": 40.467,
+      "line": 6,
+      "brk": "sentence"
+    }
+  ],
+  "lines": [
+    {
+      "scene": "hook",
+      "index": 0,
+      "text": "Sunlight looks white, so why is the clear sky above you blue and not white too?",
+      "start": 0,
+      "end": 4.43
+    },
+    {
+      "scene": "problem",
+      "index": 0,
+      "text": "White sunlight carries all the colours of the rainbow, so why does the sky pick out the blue?",
+      "start": 5.33,
+      "end": 10.3
+    },
+    {
+      "scene": "layer1",
+      "index": 0,
+      "text": "Each colour travels as a wave, and blue light travels in shorter waves than red light.",
+      "start": 11.2,
+      "end": 15.81
+    },
+    {
+      "scene": "layer2",
+      "index": 0,
+      "text": "The air above you is full of gas molecules, and all that sunlight has to pass through them.",
+      "start": 16.71,
+      "end": 21.55
+    },
+    {
+      "scene": "hardest",
+      "index": 0,
+      "text": "Gas molecules scatter blue light in all directions more than the other colours, so blue reaches you from the whole sky.",
+      "start": 22.45,
+      "end": 28.69
+    },
+    {
+      "scene": "payoff",
+      "index": 0,
+      "text": "Near the horizon the sky looks paler, because that light crossed more air and its blue was scattered many times in many directions.",
+      "start": 29.59,
+      "end": 36.31
+    },
+    {
+      "scene": "share",
+      "index": 0,
+      "text": "Send this to the next person who asks you why the sky is blue.",
+      "start": 37.21,
+      "end": 40.5
+    }
+  ],
+  "scenes": [
+    {
+      "id": "hook",
+      "start": 0,
+      "end": 4.43
+    },
+    {
+      "id": "problem",
+      "start": 5.33,
+      "end": 10.3
+    },
+    {
+      "id": "layer1",
+      "start": 11.2,
+      "end": 15.81
+    },
+    {
+      "id": "layer2",
+      "start": 16.71,
+      "end": 21.55
+    },
+    {
+      "id": "hardest",
+      "start": 22.45,
+      "end": 28.69
+    },
+    {
+      "id": "payoff",
+      "start": 29.59,
+      "end": 36.31
+    },
+    {
+      "id": "share",
+      "start": 37.21,
+      "end": 40.5
+    }
+  ]
+}

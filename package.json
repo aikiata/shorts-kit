@@ -1,0 +1,56 @@
+{
+  "name": "shorts-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Make narrated vertical shorts with a coding agent and Remotion.",
+  "license": "MIT",
+  "author": {
+    "name": "howznguyen",
+    "url": "https://howznguyen.dev"
+  },
+  "homepage": "https://github.com/howznguyen/shorts-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/howznguyen/shorts-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/howznguyen/shorts-kit/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "new": "bun scripts/new.ts",
+    "dev": "bun scripts/remotion.ts dev",
+    "tts": "bun scripts/tts.ts",
+    "lint": "bun scripts/lint.ts",
+    "facts": "bun scripts/facts.ts",
+    "still": "bun scripts/remotion.ts still",
+    "render": "bun scripts/remotion.ts render",
+    "cover": "bun scripts/remotion.ts cover",
+    "normalize": "bun scripts/normalize.ts",
+    "encode": "bun scripts/encode.ts",
+    "preview": "bun scripts/preview.ts",
+    "check": "bun scripts/check-boundaries.ts && tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.540",
+    "@remotion/google-fonts": "4.0.540",
+    "@untitledui/icons": "0.0.23",
+    "bun-plugin-tailwind": "0.1.2",
+    "react": "19.2.0",
+    "react-aria": "3.53.1",
+    "react-aria-components": "1.22.1",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.540",
+    "tailwind-merge": "3.7.0",
+    "tailwindcss": "4.3.4",
+    "tailwindcss-animate": "1.0.7",
+    "tailwindcss-react-aria-components": "2.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "edge-tts-universal": "1.4.0",
+    "typescript": "5.9.3"
+  }
+}

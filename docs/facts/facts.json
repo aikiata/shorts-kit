@@ -1,0 +1,38 @@
+[
+  {
+    "id": "f-0001",
+    "claim": "Sunlight looks white, but it is made up of all the colours of the rainbow",
+    "value": "white light = all colours",
+    "status": "verified",
+    "sources": ["s-0001"],
+    "checkedAt": "2026-11-05",
+    "usedIn": [{"video": "example", "scenes": ["hook", "problem"]}]
+  },
+  {
+    "id": "f-0002",
+    "claim": "Blue light travels in shorter waves than red light",
+    "value": "blue wavelength < red wavelength",
+    "status": "verified",
+    "sources": ["s-0001"],
+    "checkedAt": "2026-11-05",
+    "usedIn": [{"video": "example", "scenes": ["layer1"]}]
+  },
+  {
+    "id": "f-0003",
+    "claim": "The gas molecules in the air scatter blue light in all directions more than the other colours, which is why the sky looks blue most of the time",
+    "value": "blue is scattered most",
+    "status": "verified",
+    "sources": ["s-0001"],
+    "checkedAt": "2026-11-05",
+    "usedIn": [{"video": "example", "scenes": ["layer2", "hardest"]}]
+  },
+  {
+    "id": "f-0004",
+    "claim": "Near the horizon the sky looks lighter blue or white, because that light has passed through more air and its blue has been scattered many times in many directions",
+    "value": "horizon sky paler than overhead",
+    "status": "verified",
+    "sources": ["s-0001"],
+    "checkedAt": "2026-11-05",
+    "usedIn": [{"video": "example", "scenes": ["payoff"]}]
+  }
+]

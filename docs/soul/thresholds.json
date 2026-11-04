@@ -1,0 +1,279 @@
+{
+  "_doc": {
+    "value": "Machine-readable half of the SOUL rules. The argument lives in the §; the number lives here. Change both together (sk-improve), then lint every video. Every key is { value, rule, why }. These are defaults measured on one channel; re-measure yours.",
+    "rule": "SOUL.md",
+    "why": "one source of truth for numbers, so code never hard-codes a threshold"
+  },
+  "maxDurationSeconds": {
+    "value": 180,
+    "rule": "§8",
+    "why": "hard platform ceiling: a YouTube upload over 3 minutes is not a Short (a 195.5 s video was published as a regular video)"
+  },
+  "targetDurationSeconds": {
+    "value": [60, 90],
+    "rule": "§3",
+    "why": "soft pacing target; past ~90 s the edit starts to drag unless the content earns it"
+  },
+  "outroHoldSeconds": {
+    "value": [3, 4],
+    "rule": "§2",
+    "why": "silent hold on the last frame so the viewer has a beat to share; a missing default once cut four videos at the last word"
+  },
+  "maxWordsPerSentence": {
+    "value": 25,
+    "rule": "§3b",
+    "why": "mechanism sentences with but/because/so run up to ~25 words; longer ones need a full stop. Measured in a syllable-counted language: re-measure for yours"
+  },
+  "medianWordsPerSentence": {
+    "value": 16,
+    "rule": "§3b",
+    "why": "median of 1,266 Shorts sentences from six large knowledge channels; much lower medians read as a summary, not a person who knows"
+  },
+  "shortSentenceMaxShare": {
+    "value": 0.13,
+    "rule": "§3b",
+    "why": "sentences of 7 words or fewer are about 1 in 8 on large channels; a run of them sounds flat and machine-written"
+  },
+  "shortSentenceMaxWords": {
+    "value": 7,
+    "rule": "§3b",
+    "why": "the length that counts as 'short' for shortSentenceMaxShare"
+  },
+  "veryShortSentenceMaxShare": {
+    "value": 0.04,
+    "rule": "§3b",
+    "why": "sentences of 4 words or fewer are about 1 in 25 on large channels, and still have a subject and a verb"
+  },
+  "factEverySeconds": {
+    "value": 2.5,
+    "rule": "§3",
+    "why": "about one information beat per 2.5 s keeps a 70-80 s video above 25 beats; does not apply to things that must be read"
+  },
+  "readingHoldSeconds": {
+    "value": {"oneImage": 5, "comparePair": 8, "tableOrTimeline": 6},
+    "rule": "§3",
+    "why": "a frame shown for 3.8 s drew 'the images flash by too fast'; comparing takes longer than looking"
+  },
+  "onFrameTextMaxSceneShare": {
+    "value": 0.5,
+    "rule": "§7c",
+    "why": "more than half the scenes with on-frame text is a sign of failure; viewers remember none of seven valid headlines"
+  },
+  "kickerMaxChars": {
+    "value": 25,
+    "rule": "§7c",
+    "why": "a kicker is a label, read in one glance"
+  },
+  "headlineMaxWords": {
+    "value": 6,
+    "rule": "§7c",
+    "why": "a headline that is a sentence belongs to the voice; the frame carries data"
+  },
+  "longSceneSpokenSeconds": {
+    "value": 20,
+    "rule": "§7c",
+    "why": "past this, ledger details should move from the voice to the frame"
+  },
+  "captionWordsPerChunk": {
+    "value": [2, 4],
+    "rule": "§7",
+    "why": "captions follow the ear; whole sentences on screen are a wall of text"
+  },
+  "captionBottomShare": {
+    "value": 0.24,
+    "rule": "§7",
+    "why": "caption block bottom ~24% of frame height above the bottom edge, clear of platform UI"
+  },
+  "safeTopPx": {
+    "value": 212,
+    "rule": "§7a",
+    "why": "strictest top UI edge (Reels) on a 1080x1920 frame"
+  },
+  "safeBottomPx": {
+    "value": 1726,
+    "rule": "§7a",
+    "why": "strictest platform caption area start (Reels)"
+  },
+  "safeRightPx": {
+    "value": {"x": 927, "fromY": 803},
+    "rule": "§7a",
+    "why": "strictest right button column: x from Reels, start height from TikTok"
+  },
+  "panelMaxWidthPx": {
+    "value": 774,
+    "rule": "§7a",
+    "why": "a centred panel wider than this pokes into the button column; size for the final camera scale"
+  },
+  "captionSecondLangMaxLines": {
+    "value": 2,
+    "rule": "§7e",
+    "why": "a third line of the translation overlaps the main caption silently"
+  },
+  "captionSecondLangMaxChars": {
+    "value": 92,
+    "rule": "§7e",
+    "why": "about two lines at ~30 px inside the panel width"
+  },
+  "loudnessLUFS": {
+    "value": -13,
+    "rule": "§8",
+    "why": "raw renders sit near -20 LUFS and play quieter than the rest of the feed; re-measure after encode"
+  },
+  "truePeakMaxDb": {
+    "value": -1,
+    "rule": "§8",
+    "why": "never clip; the platform re-encode adds overshoot"
+  },
+  "musicUnderVoiceDb": {
+    "value": 9,
+    "rule": "§8",
+    "why": "floor for P90 minus P10 of 200 ms RMS windows on the encoded file; below it the bed swallows the voice. Narrow is not bad by itself (the best video sat at 12.1). Warn only"
+  },
+  "musicFadeOutSeconds": {
+    "value": 9,
+    "rule": "§8",
+    "why": "an even fade to zero before the silent hold"
+  },
+  "sfxMaxPerVideo": {
+    "value": 5,
+    "rule": "§8",
+    "why": "SFX are accents; scattered evenly they turn an explainer into a meme video"
+  },
+  "sfxTargetLUFS": {
+    "value": -20,
+    "rule": "§8",
+    "why": "SFX files varied by 11 dB; normalize each just under the voice"
+  },
+  "audioSampleRate": {
+    "value": 48000,
+    "rule": "§11",
+    "why": "unusual rates (96 kHz) are mishandled by uploaders"
+  },
+  "strongWords": {
+    "value": {"max": 0, "words": [], "allowedScenes": ["hook", "payoff"]},
+    "rule": "§1b",
+    "why": "off by default; a channel may allow one strong word as an accent. More than one turns the accent into the voice. Never in title, description, cover or on-frame text"
+  },
+  "bannedPhrases": {
+    "value": [
+      "let's dive in", "dive into", "deep dive", "did you know", "you won't believe",
+      "believe it or not", "the truth is", "the answer may surprise you", "it turns out",
+      "here's the thing", "but that's not all", "what happens next", "journey",
+      "fascinating", "mind-blowing", "mind blowing", "incredible", "unbelievable",
+      "shocking", "jaw-dropping", "game-changer", "game changer", "delve", "tapestry",
+      "a testament to", "in a world where", "imagine a world", "picture this",
+      "buckle up", "without further ado", "stay tuned", "let's explore",
+      "let's take a look", "let's find out", "hidden gem", "unlock the secrets",
+      "the secret behind", "at the end of the day", "needless to say",
+      "it's important to note", "it is worth noting", "in conclusion", "furthermore",
+      "moreover", "additionally", "that being said", "simply put", "in other words",
+      "science has proven", "click the link", "link in bio"
+    ],
+    "rule": "§3b",
+    "why": "hype, essay joints and trailer wrapping: the places where channels sound identical. Large channels use each in 0-4% of videos"
+  },
+  "intensifiers": {
+    "value": ["really", "truly", "extremely", "incredibly", "absolutely", "literally", "totally", "not only"],
+    "rule": "§3b",
+    "why": "an adjective the viewer cannot check, next to a real number, weakens the number"
+  },
+  "intensifiersMax": {
+    "value": 1,
+    "rule": "§3b",
+    "why": "one emphasis per video keeps it meaningful"
+  },
+  "hookOnlyPhrases": {
+    "value": [
+      "hello", "hi everyone", "hey guys", "welcome", "in this video", "in today's video",
+      "today we", "subscribe", "don't forget", "hit the bell", "before we start",
+      "before we begin", "today's story"
+    ],
+    "rule": "§3b",
+    "why": "long-lived channels greet and ask to subscribe mid-video; only the first seconds are too expensive for it"
+  },
+  "bannedMarks": {
+    "value": [":", "—", "–", " - ", "etc."],
+    "rule": "§3b",
+    "why": "spoken text becomes captions; these read as an outline and create no pause for the voice"
+  },
+  "silentPunctuation": {
+    "value": [",", ";", ":", "—", "–"],
+    "rule": "§4",
+    "why": "the pause pipeline only breaks on . ! ? ; these marks create zero silence"
+  },
+  "maxSilentInLongSentence": {
+    "value": 0,
+    "rule": "§4",
+    "why": "a sentence already over the limit that leans on commas means the writer thought the comma made a pause"
+  },
+  "pronounOpeners": {
+    "value": ["it", "this", "that", "they", "these", "those", "he", "she"],
+    "rule": "§3b",
+    "why": "the first sentence of each scene names its subject; mid-scene pronouns are fine"
+  },
+  "repeatGramSize": {
+    "value": 4,
+    "rule": "§3b",
+    "why": "four-word phrases are long enough to be a mould, short enough to catch one forming"
+  },
+  "repeatGramMinVideos": {
+    "value": 3,
+    "rule": "§3b",
+    "why": "a phrase in 3+ videos is a mould forming ('reason number one' grew into seven videos unnoticed); share scene and flow markers exempt"
+  },
+  "recapMinScenes": {
+    "value": 2,
+    "rule": "§3c",
+    "why": "a payoff sharing distinct four-word phrases with 2+ body scenes is recapping. Warn only (it can be a deliberate callback)"
+  },
+  "sourceOnlyEndings": {
+    "value": ["recalls", "reports", "according to", "says so", "wrote", "told us", "notes"],
+    "rule": "§3c",
+    "why": "a sentence that ends on a reporting verb usually carries nothing but its source; matching the ending is narrower than matching words"
+  },
+  "maxDatesPerScene": {
+    "value": 2,
+    "rule": "§3d",
+    "why": "p90 of the source channel; three or four dates in a scene is telling by chronology instead of story"
+  },
+  "maxDatesPerVideo": {
+    "value": 8,
+    "rule": "§3d",
+    "why": "p90 of the source channel across 46 scripts"
+  },
+  "maxParallelRun": {
+    "value": 3,
+    "rule": "§3d",
+    "why": "three consecutive sentences opening with the same word are an outline in story costume"
+  },
+  "universalWords": {
+    "value": ["everyone", "everybody", "nobody", "always", "never", "all of us", "humans are wired", "by nature", "instinct", "science has proven", "it is proven"],
+    "rule": "§9",
+    "why": "a scene resting only on single-study or review evidence may not speak for all of humanity"
+  },
+  "weakEvidenceLevels": {
+    "value": ["single-study", "review"],
+    "rule": "§9",
+    "why": "evidence levels that do not allow universal words"
+  },
+  "coverCropRatio": {
+    "value": 1.29,
+    "rule": "§10",
+    "why": "profile grids crop 1080x1920 to ~1:1.29, losing 263 px top and bottom"
+  },
+  "coverGridWidthPx": {
+    "value": 200,
+    "rule": "§10",
+    "why": "the cover is ~200 px wide in the grid: one number and about three words survive"
+  },
+  "descriptionFirstLineMaxChars": {
+    "value": 100,
+    "rule": "§11a",
+    "why": "the first line becomes the YouTube title, capped at 100 characters"
+  },
+  "descriptionMaxChars": {
+    "value": 4000,
+    "rule": "§11a",
+    "why": "platform caption cap; hashtags count toward it"
+  }
+}

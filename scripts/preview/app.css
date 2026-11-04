@@ -1,0 +1,41 @@
+/* shorts-kit preview: Tailwind v4 + the Untitled UI theme tokens (ui/theme.css, MIT). */
+@import "tailwindcss";
+@import "./ui/theme.css";
+
+/* Brand = the kit's caption accent (#3FD0FF in src/shared/theme.ts), so the
+   dashboard and the videos share one colour instead of Untitled UI's default purple. */
+@theme {
+    --color-brand-25: rgb(245 253 255);
+    --color-brand-50: rgb(236 251 255);
+    --color-brand-100: rgb(211 245 255);
+    --color-brand-200: rgb(173 233 255);
+    --color-brand-300: rgb(127 220 255);
+    --color-brand-400: rgb(63 208 255);
+    --color-brand-500: rgb(21 184 238);
+    --color-brand-600: rgb(8 150 200);
+    --color-brand-700: rgb(10 119 161);
+    --color-brand-800: rgb(15 97 132);
+    --color-brand-900: rgb(18 80 109);
+    --color-brand-950: rgb(8 52 73);
+}
+
+@plugin "tailwindcss-react-aria-components";
+@plugin "tailwindcss-animate";
+
+@source "./";
+
+@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+
+@utility transition-inherit-all {
+    transition-property: inherit;
+    transition-duration: inherit;
+    transition-timing-function: inherit;
+}
+
+html,
+body {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+}

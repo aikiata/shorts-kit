@@ -1,0 +1,9 @@
+node_modules/
+out/
+.cache/
+public/audio/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log

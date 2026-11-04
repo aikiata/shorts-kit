@@ -1,0 +1,24 @@
+{
+  "id": "example",
+  "flow": "H",
+  "visual": ["illustrated-scene", "text-as-image"],
+  "language": "en",
+  "voice": {
+    "engine": "say",
+    "voice": "Samantha",
+    "tempo": 1
+  },
+  "pause": {"line": 0.5, "scene": 0.9},
+  "outroHold": 3,
+  "pronounce": {},
+  "spelling": {},
+  "scenes": [
+    {"id": "hook", "lines": [{"text": "Sunlight looks white, so why is the clear sky above you blue and not white too?", "fact": "f-0001"}]},
+    {"id": "problem", "lines": [{"text": "White sunlight carries all the colours of the rainbow, so why does the sky pick out the blue?", "fact": "f-0001"}]},
+    {"id": "layer1", "lines": [{"text": "Each colour travels as a wave, and blue light travels in shorter waves than red light.", "fact": "f-0002"}]},
+    {"id": "layer2", "lines": [{"text": "The air above you is full of gas molecules, and all that sunlight has to pass through them.", "fact": "f-0003"}]},
+    {"id": "hardest", "lines": [{"text": "Gas molecules scatter blue light in all directions more than the other colours, so blue reaches you from the whole sky.", "fact": "f-0003"}]},
+    {"id": "payoff", "lines": [{"text": "Near the horizon the sky looks paler, because that light crossed more air and its blue was scattered many times in many directions.", "fact": "f-0004"}]},
+    {"id": "share", "lines": [{"text": "Send this to the next person who asks you why the sky is blue."}]}
+  ]
+}
