@@ -1,4 +1,12 @@
+<p align="center">
+  <img src="docs/assets/logo.png" alt="shorts-kit logo" width="128">
+</p>
+
 # shorts-kit
+
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.knowns.dev)
+[![Facebook group](https://img.shields.io/badge/Facebook-Agentic%20Coding%20Vietnam-1877F2?logo=facebook&logoColor=white)](https://www.facebook.com/groups/agentic.coding.vietnam)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ![shorts-kit: narrated vertical shorts, made with your coding agent](docs/assets/cover.jpg)
 
@@ -182,6 +190,16 @@ Each video has its own Remotion entry, so a broken video never breaks another on
 - Look at the stills and the render. The agent catches layout bugs, not dull videos.
 - Upload, set the cover, and paste the pinned comment (it carries the credits).
 - After posting, give your agent the numbers so `sk-improve` can adjust your rules.
+
+## Community
+
+Made a video with the kit, stuck on a step, or want a second pair of eyes on a script
+before you post? Come say hi:
+
+- **Discord:** [discord.knowns.dev](https://discord.knowns.dev): questions, show-and-tell, feedback on drafts
+- **Facebook:** [Agentic Coding Vietnam](https://www.facebook.com/groups/agentic.coding.vietnam): cộng đồng tiếng Việt, khoe video và hỏi đáp
+
+Bugs and feature requests go in [GitHub issues](https://github.com/howznguyen/shorts-kit/issues).
 
 ## Licences
 

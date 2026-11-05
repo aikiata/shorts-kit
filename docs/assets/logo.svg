@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+<radialGradient id="g" cx="0.5" cy="0.45" r="0.7"><stop offset="0" stop-color="#16324a"/><stop offset="1" stop-color="#070a11"/></radialGradient>
+<linearGradient id="c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6ad8ff"/><stop offset="1" stop-color="#1fa8ec"/></linearGradient>
+</defs>
+<rect width="1024" height="1024" rx="224" fill="url(#g)"/>
+<g transform="translate(-70 30) rotate(-16 512 560)"><rect x="342" y="210" width="340" height="604" rx="60" fill="#2b3dd1"/></g>
+<g transform="translate(70 30) rotate(14 512 560)"><rect x="342" y="210" width="340" height="604" rx="60" fill="#ff4d5e"/></g>
+<rect x="327" y="190" width="370" height="658" rx="66" fill="url(#c)"/>
+<path d="M468 400 L468 560 L596 480 Z" fill="#0b0f17" stroke="#0b0f17" stroke-width="26" stroke-linejoin="round"/>
+<rect x="397" y="650" width="230" height="38" rx="19" fill="#0b0f17"/>
+<rect x="437" y="712" width="150" height="38" rx="19" fill="#0b0f17" opacity="0.5"/>
+<path d="M0 -1 C0.12 -0.12 0.12 -0.12 1 0 C0.12 0.12 0.12 0.12 0 1 C-0.12 0.12 -0.12 0.12 -1 0 C-0.12 -0.12 -0.12 -0.12 0 -1 Z" fill="#ffd23f" transform="translate(718 214) scale(92)"/>
+<path d="M0 -1 C0.12 -0.12 0.12 -0.12 1 0 C0.12 0.12 0.12 0.12 0 1 C-0.12 0.12 -0.12 0.12 -1 0 C-0.12 -0.12 -0.12 -0.12 0 -1 Z" fill="#ffd23f" transform="translate(806 330) scale(44)"/>
+</svg>

@@ -4,7 +4,7 @@
  */
 import {useCallback, useEffect, useMemo, useRef, useState, type ReactNode} from "react";
 import {createRoot} from "react-dom/client";
-import {ArrowLeft, Check, Code02, Copy01, Globe01, PlayCircle, RefreshCw01, X} from "@untitledui/icons";
+import {ArrowLeft, Check, Code02, Copy01, Globe01, MessageChatCircle, PlayCircle, RefreshCw01, Users01, X} from "@untitledui/icons";
 import {Badge, BadgeWithDot} from "./ui/badges";
 import {Button} from "./ui/button";
 import {ButtonUtility} from "./ui/button-utility";
@@ -992,7 +992,7 @@ const Footer = () => (
         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-solid text-white shadow-xs">
           <PlayCircle className="size-5" />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-md font-semibold text-primary">shorts-kit</p>
           <p className="mt-0.5 text-sm text-tertiary">Narrated vertical shorts with a coding agent and Remotion.</p>
           <p className="mt-2 text-sm text-tertiary">
@@ -1001,9 +1001,12 @@ const Footer = () => (
               howznguyen
             </a>
           </p>
+          <p className="mt-1 text-sm text-tertiary">Made a video? Show it, or get feedback before you post, in the community.</p>
         </div>
       </div>
       <nav className="flex flex-wrap gap-2" aria-label="Links">
+        <FooterLink href="https://discord.knowns.dev" icon={<MessageChatCircle className="size-4" />}>Discord</FooterLink>
+        <FooterLink href="https://www.facebook.com/groups/agentic.coding.vietnam" icon={<Users01 className="size-4" />}>Facebook group</FooterLink>
         <FooterLink href="https://github.com/howznguyen/shorts-kit" icon={<Code02 className="size-4" />}>Source</FooterLink>
         <FooterLink href="https://howznguyen.dev" icon={<Globe01 className="size-4" />}>howznguyen.dev</FooterLink>
         <FooterLink href="https://github.com/howznguyen" icon={<GitHubMark className="size-4" />}>@howznguyen</FooterLink>
