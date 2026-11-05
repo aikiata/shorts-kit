@@ -17,6 +17,24 @@ Only `src/videos/<id>/narration.json` (schema in
 `docs/making-a-video.md`). **Never hand-edit `voice.json`**: it is generated and
 carries a hash of the script it was made from.
 
+## A recorded voice (`voice.engine: "recorded"`, §5j)
+
+There is no script to write: the lines come from the recording.
+`docs/visuals/talking-head.md` holds the rules; in short:
+
+1. `bun run ingest <id> <file> --lang <code>`; pass `--prompt` with names and terms
+   said in the take. Read the review it prints.
+2. Edit `cuts.json`: fillers, retakes (keep the **last** attempt), false starts, a
+   call to action at the end (`tail`). Every cut has a reason; never cut a word to
+   change a sentence's meaning.
+3. Ask the user what was actually said wherever the review shows `?`, a number, a
+   name or `⟪words missing?⟫`. Put each fix in `spelling` (whole phrase → what was
+   said). Never retype `text` and never edit `transcript.json`.
+4. `bun run cut <id>`, listen to `public/audio/<id>/voice.mp3`, then move whole
+   line objects into the flow's beats and add `fact` (or `"claim": false`).
+5. `bun run lint <id>`. Writing-style rules only warn here; the fix is a cut or a
+   re-take, not a rewrite.
+
 ## Steps
 
 1. **Read the flow file** for this video's `flow`: its beats become scenes, its

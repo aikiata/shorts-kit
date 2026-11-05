@@ -275,5 +275,55 @@
     "value": 4000,
     "rule": "§11a",
     "why": "platform caption cap; hashtags count toward it"
+  },
+  "footageFillers": {
+    "value": {"en": ["um", "uh", "uhm", "erm", "er", "hmm", "mm"], "vi": ["ừm", "ừ", "ờ", "ơ", "à", "ạ", "ầy", "hừm", "ưm"]},
+    "rule": "§5j",
+    "why": "single-word filler sounds `bun run cut` proposes to remove; a phrase filler (\"kiểu là\", \"you know\") is a judgement, cut it by hand"
+  },
+  "footageMaxGapSeconds": {
+    "value": 0.35,
+    "rule": "§5j",
+    "why": "every silence between kept words is shortened to this; longer reads as a stall on a phone, shorter swallows breaths and sounds spliced"
+  },
+  "footagePadSeconds": {
+    "value": 0.06,
+    "rule": "§5j",
+    "why": "air kept around each kept run so a cut never clips the first or last syllable"
+  },
+  "footageRetakeWindowWords": {
+    "value": 15,
+    "rule": "§5j",
+    "why": "a restart of the same three words within this many words is proposed as a retake (the last attempt is kept)"
+  },
+  "footageLowConfidence": {
+    "value": 0.45,
+    "rule": "§5j",
+    "why": "Whisper words under this confidence are flagged with ? in the review: likely misheard names and numbers"
+  },
+  "footageJoinMaxDb": {
+    "value": -35,
+    "rule": "§5j",
+    "why": "a join louder than this cuts through a syllable; the same quiet threshold `bun run tts` uses between lines (§4)"
+  },
+  "footageCtaPhrases": {
+    "value": {"en": ["follow", "subscribe", "like and share", "comment below", "link in bio", "hit the bell"], "vi": ["theo dõi", "đăng ký", "bấm follow", "nhấn follow", "để lại bình luận", "comment bên dưới", "link ở bio", "chia sẻ video"]},
+    "rule": "§1",
+    "why": "a filmed video that ends on a call to action ends on a logo in words; cut to the turn"
+  },
+  "footageFaceMarginPx": {
+    "value": 160,
+    "rule": "§5j",
+    "why": "an effect whose top edge is less than this above the declared face band would hang over the face; lint knows only top edges, the still review checks the rest"
+  },
+  "effectsPerMinute": {
+    "value": [4, 10],
+    "rule": "§5j",
+    "why": "shared effects (caption, marks, chart) per minute of a talking-head video: fewer is a static selfie, more is noise over the person"
+  },
+  "punchEffectsMax": {
+    "value": 1,
+    "rule": "§5j",
+    "why": "WordSlam and Stamp are the exclamation mark; a second one in the same video cancels the first"
   }
 }

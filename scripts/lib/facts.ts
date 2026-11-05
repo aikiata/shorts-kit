@@ -42,7 +42,7 @@ export const loadLedger = () => {
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUSES = ["verified", "contested", "unverified"];
-const ASSET_KINDS = ["image", "footage", "music", "sfx", "font"];
+const ASSET_KINDS = ["image", "footage", "voice", "music", "sfx", "font"];
 
 /** The checks from docs/facts/README.md → "What validation checks". */
 export const validateLedger = (facts: Fact[], sources: Source[]) => {
@@ -60,7 +60,8 @@ export const validateLedger = (facts: Fact[], sources: Source[]) => {
     srcIds.set(s.id, s);
     for (const k of ["title", "publisher", "accessed"] as const) if (!s[k]) errors.push(`${at}: missing ${k}`);
     if (s.accessed && !DATE.test(s.accessed)) errors.push(`${at}: accessed must be YYYY-MM-DD`);
-    if (!s.url) warnings.push(`${at}: no url (the page actually opened)`);
+    // The channel's own recording (licence "own footage…", "own recording…") has no page to link.
+    if (!s.url && !/^own\b/i.test(s.licence ?? "")) warnings.push(`${at}: no url (the page actually opened)`);
     if (s.kind && ASSET_KINDS.includes(s.kind) && !s.licence) errors.push(`${at}: ${s.kind} asset with no licence`);
   }
 

@@ -25,6 +25,8 @@ from the absence of an error. Three silent-failure shapes that really happened:
 | `bun run new <id> --flow <X>` | scaffold `src/videos/<id>/` from `_template`, `narration.json` with the flow and its beats |
 | `bun run dev <id>` | Remotion Studio on that video |
 | `bun run tts <id> [--force]` | synthesise the whole script → `public/audio/<id>/voice.mp3` + `src/videos/<id>/voice.json` |
+| `bun run ingest <id> <file> [--lang vi] [--prompt "…"]` | recorded voice (§5j): normalise a take or a recording, Whisper transcript, proposed cuts |
+| `bun run cut <id> [--propose --force]` | apply `cuts.json` → `public/audio/<id>/voice.mp3` (same place as TTS; + `public/footage/<id>/cut.mp4` for talking-head), `voice.json`, lines in `narration.json` |
 | `bun run lint <id>` | machine checks from `thresholds.json` + narration + facts |
 | `bun run facts` | validate `docs/facts/*.json` |
 | `bun run still <id> [--frame=N]` | render `out/<id>/still-<frame>.png` |
@@ -107,6 +109,30 @@ bun run tts <id>
 - Editing a line means re-running TTS (the whole script is one reading). Fix a loop or
   a mispronunciation by **rewriting the line** or adding `pronounce`, not by re-rolling.
 - Then `bun run lint <id>` again: the duration checks need `voice.json`.
+
+## 5 (recorded voice). Ingest and cut instead of TTS: `sk-narration`
+
+For a video whose voice is a recording (`voice.engine: "recorded"`): a filmed take shown on
+screen (`--visual talking-head`) or a voice-only recording under an ordinary visual
+(`--voice recorded`). Rules: [`docs/visuals/talking-head.md`](visuals/talking-head.md) (§5j).
+
+```bash
+bun run new <id> --flow <X> --visual talking-head            # or: --visual text-as-image --voice recorded
+bun run ingest <id> ~/Movies/take.mov --lang vi --prompt "names said"
+# read the review; edit src/videos/<id>/cuts.json; fix misheard words with "spelling"
+bun run cut <id>
+```
+
+| | |
+| --- | --- |
+| Needs | `whisper-cli` (`brew install whisper-cpp`) and the model in `.cache/whisper/` (`ingest` prints the download line) |
+| Produces | `transcript.json`, `cuts.json`, `footage.json`, `voice.json`, `public/audio/<id>/voice.mp3` (+ `public/footage/<id>/cut.mp4`) |
+| Check | every `?`, number, name and `⟪words missing?⟫` in the review heard and confirmed with the person who spoke; listen to `voice.mp3` end to end at every join |
+| Rules | §5j, §9 (every claim said is verified, cut, or `"claim": false`), §1 (no call-to-action ending) |
+
+- A line is a range of transcript words (`"words": [a, b]`). Regroup lines into beats by
+  moving whole line objects; never retype `text`.
+- A new take is a new transcript: re-ingest, and the old `cuts.json` is replaced.
 
 ## 5b. Storyboard: `sk-scene`
 

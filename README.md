@@ -161,6 +161,8 @@ mostly approving the script, listening to the voice, and looking at stills.
 | `bun run new <id> --flow <A..T>` | scaffold `src/videos/<id>/` from a flow's beats |
 | `bun run dev <id>` | Remotion Studio for that video |
 | `bun run tts <id> [--force]` | synthesise the whole script, write the audio and `voice.json` |
+| `bun run ingest <id> <file>` | recorded voice instead of TTS (a filmed take or a voice recording): Whisper transcript and proposed cuts |
+| `bun run cut <id>` | apply the reviewed `cuts.json`: the voice track (and the cut video for `talking-head`), `voice.json` |
 | `bun run storyboard <id> [--init]` | the shot list after the voice: scaffold it, then print each shot with its time and what to fix |
 | `bun run lint <id>` | style, facts, length and timing checks from `thresholds.json` |
 | `bun run facts` | validate the fact ledger |

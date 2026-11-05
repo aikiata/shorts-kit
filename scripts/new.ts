@@ -14,6 +14,33 @@ import {estimateVoice, type Narration} from "./lib/narration";
 import {die, flag, ID_RE, p, videoDir} from "./lib/paths";
 import {writeVoice} from "./lib/narration";
 
+/** Video.tsx for a filmed video: the footage is the background, its audio the voice. */
+const FOOTAGE_VIDEO = `import React from "react";
+import {FootageStage, type FaceBand, type FootageJoin} from "../../shared/frame/FootageStage";
+import {ShortsTemplate} from "../../shared/frame/ShortsTemplate";
+import {DEFAULT_PALETTE} from "../../shared/theme";
+import footage from "./footage.json";
+import narration from "./narration.json";
+import {scenes} from "./scenes";
+import {FPS, OUTRO_HOLD, VOICE} from "./timing";
+
+/**
+ * A talking-head video (§5j): the filmed take (written by "bun run cut") under
+ * this video's effect scenes. Effects stay off the face band in narration.json "face".
+ */
+export const Video: React.FC<{safe: boolean}> = ({safe}) => (
+  <ShortsTemplate
+    voice={VOICE}
+    fps={FPS}
+    outroHold={OUTRO_HOLD}
+    scenes={scenes}
+    palette={DEFAULT_PALETTE}
+    safe={safe}
+    background={<FootageStage src={footage.video} duration={footage.duration} joins={footage.joins as FootageJoin[]} face={(narration as {face?: FaceBand}).face} />}
+  />
+);
+`;
+
 const flows = () =>
   readdirSync(p("docs/flows"))
     .map((f) => f.match(/^([A-Z])-(.+)\.md$/))
@@ -24,7 +51,7 @@ const visuals = () =>
     .filter((f) => f.endsWith(".md") && f !== "README.md")
     .map((f) => f.replace(/\.md$/, ""));
 
-const id = process.argv.slice(2).find((a, i, all) => !a.startsWith("-") && !/^--(flow|visual)$/.test(all[i - 1] ?? ""));
+const id = process.argv.slice(2).find((a, i, all) => !a.startsWith("-") && !/^--(flow|visual|voice)$/.test(all[i - 1] ?? ""));
 const flowArg = flag("flow");
 const list = flows();
 const usage = `usage: bun run new <id> --flow <${list.map((f) => f.letter).join("|")}> [--visual ${visuals().join(",")}]`;
@@ -52,17 +79,28 @@ const tpl = p("src/videos/_template");
 const defaults = JSON.parse(readFileSync(join(tpl, "narration.json"), "utf8")) as Narration;
 cpSync(tpl, dir, {recursive: true});
 
+const filmed = visual.includes("talking-head");
+// --voice recorded: a voice-only recording drives an ordinary video (no footage on screen)
+const recorded = filmed || flag("voice") === "recorded";
 const narration: Narration = {
   ...defaults,
   id: id!,
   flow: flow.letter,
   visual,
+  // A filmed video's voice is the footage; lines come from `bun run cut` (§5j).
+  ...(recorded ? {voice: {engine: "recorded", source: ""}} : {}),
+  ...(filmed ? {face: {top: 0, bottom: 0}} : {}),
   scenes: sceneIds.map((s) => ({id: s, lines: [{text: `TODO write the ${s} line.`, fact: ""}]})),
 };
 await Bun.write(join(dir, "narration.json"), `${JSON.stringify(narration, null, 2)}\n`);
+if (filmed) {
+  await Bun.write(join(dir, "footage.json"), `${JSON.stringify({transcript: "", cuts: "", video: "", audio: "", duration: 0, joins: []}, null, 2)}\n`);
+  await Bun.write(join(dir, "Video.tsx"), FOOTAGE_VIDEO);
+}
 await writeVoice(join(dir, "voice.json"), estimateVoice(narration));
 
 console.log(`+ src/videos/${id}/  flow ${flow.letter} (${flow.slug}), scenes: ${sceneIds.join(", ")}`);
 if (!visual.length) console.log('  ! "visual" is empty: decide the visual types at the brief (docs/visuals/) and fill it in');
-console.log(`  voice.json is an ESTIMATE (0.33 s/word). Next: facts, narration, \`bun run lint ${id}\`, then \`bun run tts ${id}\`.`);
+if (recorded) console.log(`  recorded voice${filmed ? ", footage on screen" : ", voice only"} (§5j). Next: \`bun run ingest ${id} <file>\`, review cuts.json, \`bun run cut ${id}\`, then facts and \`bun run lint ${id}\`.`);
+else console.log(`  voice.json is an ESTIMATE (0.33 s/word). Next: facts, narration, \`bun run lint ${id}\`, then \`bun run tts ${id}\`.`);
 console.log(`  Studio: bun run dev ${id}`);

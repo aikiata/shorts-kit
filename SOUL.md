@@ -41,7 +41,7 @@ context. Open the file for the job you are doing.
 | --- | --- | --- |
 | §1 §1b §2 §3 §3b §3c §3d | [`01-voice-and-structure.md`](docs/soul/01-voice-and-structure.md) | **writing the script**: voice, the optional strong-word threshold, choosing a flow, fact density, sentence style, tension, the viewer who knows nothing. Per-flow rules live in [`docs/flows/`](docs/flows/README.md) |
 | §4 | [`02-narration-engine.md`](docs/soul/02-narration-engine.md) | **running TTS**: full stops make pauses, numbers, the pronunciation map, engines, whole-script reading, loop checks |
-| §5 | [`03-visuals.md`](docs/soul/03-visuals.md) | **building scenes**: general visual rules; per-visual rules live in [`docs/visuals/`](docs/visuals/README.md) |
+| §5 | [`03-visuals.md`](docs/soul/03-visuals.md) | **building scenes**: general visual rules; per-visual rules live in [`docs/visuals/`](docs/visuals/README.md). A recorded voice or a filmed take instead of TTS: [`talking-head.md`](docs/visuals/talking-head.md) (§5j) |
 | §6 | [`04-color-and-type.md`](docs/soul/04-color-and-type.md) | **choosing colours or touching fonts** |
 | §7 | [`05-captions.md`](docs/soul/05-captions.md) | **putting text on the frame**: safe zones on three edges, captions vs on-frame text, caption mask, layout traps |
 | §8 | [`06-audio.md`](docs/soul/06-audio.md) | **mixing or choosing music**: licensing and Content ID, loudness, the bed under the voice, loops, SFX (how-to and bundled pack: [`docs/sfx.md`](docs/sfx.md)) |

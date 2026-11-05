@@ -21,6 +21,7 @@ combination in `narration.json` → `visual`, using the ids below. An empty list
 | `illustrated-scene` | §5g | [`illustrated-scene.md`](illustrated-scene.md) | no photos: one drawn world, held all video |
 | `satellite-map` | §5h | [`satellite-map.md`](satellite-map.md) | real ground from satellite or vector data; the camera flies, facts are drawn on it |
 | `globe` | §5i | [`globe.md`](globe.md) | the planet: great-circle lines, distances, the pull-out from a scene to Earth |
+| `talking-head` | §5j | [`talking-head.md`](talking-head.md) | a filmed take is the voice; Whisper, reasoned cuts, effects off the face |
 
 ## Choosing
 
@@ -37,6 +38,7 @@ For each claim in the brief, ask "what is on screen while this is said?"
 | a person, a place, time passing, with nothing licensed to show | `illustrated-scene` |
 | a distance, a route, a border, a coastline, a place on the ground | `satellite-map` |
 | two places far apart, a journey across oceans, the scale of a trip | `globe` |
+| the owner on camera: a reaction, a demo in the hand, a face the audience follows | `talking-head` |
 
 If a claim fits none, the topic is not buildable yet. Check licences at this moment.
 

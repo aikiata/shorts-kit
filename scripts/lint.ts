@@ -11,12 +11,13 @@ import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import type {Voice} from "../src/shared/timings";
 import {ENGINES} from "./lib/engines";
-import {loadLedger, type Fact} from "./lib/facts";
+import {loadLedger, type Fact, type Source} from "./lib/facts";
+import {cutsHash, FOOTAGE_ENGINE, keptText, loadCuts, loadFootage, loadTranscript, removedSet, SUSPECT_KEEP_MAX, suspectKept} from "./lib/footage";
 import {flatLines, loadNarration, voiceHash, type Narration} from "./lib/narration";
 import {p, videoArg, videoDir} from "./lib/paths";
 import {checkStoryboard, loadStoryboard} from "./lib/storyboard";
 import {loadThresholds, ruleOf} from "./lib/thresholds";
-import {phraseRe, sentences, wordCount, words} from "./lib/text";
+import {applyMap, phraseRe, sentences, wordCount, words} from "./lib/text";
 
 const id = videoArg("bun run lint <id>");
 const T = loadThresholds();
@@ -30,6 +31,13 @@ const ref = (key: string) => (ruleOf(key) ? ` (${ruleOf(key)}, ${key})` : "");
 const err = (m: string) => errors.push(m);
 const warn = (m: string) => warnings.push(m);
 const short = (s: string, k = 60) => (s.length > k ? `${s.slice(0, k)}…` : s);
+/** A recorded voice (§5j): the words were said, not written. */
+const footage = (rawNarration.voice as {engine?: string} | undefined)?.engine === FOOTAGE_ENGINE;
+/**
+ * Writing-style rules block a script but only warn on a recorded voice: the fix
+ * there is a cut or a re-take, never a rewrite of what was said.
+ */
+const styleErr = (m: string) => (footage ? warn(`${m} [recorded: cut it or re-record; the words cannot be rewritten]`) : err(m));
 
 // ------------------------------------------------------------------ schema
 if (rawNarration.id !== id) err(`narration.json id is "${rawNarration.id}", folder is "${id}" (§13)`);
@@ -40,7 +48,7 @@ const visualIds = readdirSync(p("docs/visuals")).filter((f) => f.endsWith(".md")
 if (!Array.isArray(rawNarration.visual) || !rawNarration.visual.length) err('"visual" is empty: decide the visual types before the script (SOUL rule 2, docs/visuals/)');
 else for (const v of rawNarration.visual) if (!visualIds.includes(v)) err(`visual "${v}" has no file in docs/visuals/`);
 if (!rawNarration.language) warn('"language" is missing (BCP-47, e.g. "en")');
-if (!ENGINES[n.voice.engine]) err(`voice.engine "${n.voice.engine}" is not one of ${Object.keys(ENGINES).join(", ")} (§4)`);
+if (!ENGINES[n.voice.engine] && n.voice.engine !== FOOTAGE_ENGINE) err(`voice.engine "${n.voice.engine}" is not one of ${Object.keys(ENGINES).join(", ")} (§4)`);
 const [holdMin, holdMax] = T.outroHoldSeconds as [number, number];
 if (n.outroHold < holdMin || n.outroHold > holdMax) warn(`outroHold ${n.outroHold} s is outside ${holdMin}–${holdMax} s${ref("outroHoldSeconds")}`);
 if (!(n.pause.line >= 0) || !(n.pause.scene >= 0)) err("pause.line and pause.scene must be seconds ≥ 0 (§4)");
@@ -79,7 +87,10 @@ for (const s of scenes) {
   s.lines.forEach((l, i) => {
     const at = `scene "${s.id}" line ${i + 1}`;
     if (!l.fact) {
-      if (s.id !== "share") warn(`${at} cites no fact: every claim needs a verified record (§9)`);
+      if (s.id === "share") return;
+      if (!footage) warn(`${at} cites no fact: every claim needs a verified record (§9)`);
+      // A recorded claim is out in the world the moment it is posted: verify it or cut it.
+      else if (l.claim !== false) err(`${at} cites no fact: verify the claim (§9), cut it, or mark "claim": false if it asserts nothing checkable: "${short(l.text, 50)}"`);
       return;
     }
     const f = facts.get(l.fact);
@@ -102,7 +113,7 @@ const sents: Sent[] = lines.flatMap((l) => sentences(l.text).map((text) => ({sce
 const maxW = T.maxWordsPerSentence as number;
 for (const s of sents) {
   if (s.words > maxW) {
-    err(`scene "${s.scene}": ${s.words} words, limit ${maxW}; split it with a full stop: "${short(s.text)}"${ref("maxWordsPerSentence")}`);
+    styleErr(`scene "${s.scene}": ${s.words} words, limit ${maxW}; split it with a full stop: "${short(s.text)}"${ref("maxWordsPerSentence")}`);
     const silent = (T.silentPunctuation as string[]).reduce((k, m) => k + (s.text.split(m).length - 1), 0);
     if (silent > T.maxSilentInLongSentence) warn(`scene "${s.scene}": a long sentence leaning on ${silent} comma/colon/dash marks, which make no pause${ref("maxSilentInLongSentence")}`);
   }
@@ -118,17 +129,17 @@ if (sents.length >= 5) {
 }
 
 for (const ph of T.bannedPhrases as string[]) {
-  for (const l of lines) if (phraseRe(ph).test(l.text)) err(`scene "${l.scene}": banned phrase "${ph}"${ref("bannedPhrases")}`);
+  for (const l of lines) if (phraseRe(ph).test(l.text)) styleErr(`scene "${l.scene}": banned phrase "${ph}"${ref("bannedPhrases")}`);
 }
 const intensifierHits = (T.intensifiers as string[]).flatMap((w) => allText.match(phraseRe(w)) ?? []);
 if (intensifierHits.length > T.intensifiersMax) warn(`${intensifierHits.length} intensifiers (${intensifierHits.join(", ")}), max ${T.intensifiersMax}${ref("intensifiersMax")}`);
 const hook = scenes.find((s) => s.id === "hook") ?? scenes[0];
-if (hook) for (const ph of T.hookOnlyPhrases as string[]) if (phraseRe(ph).test(sceneText(hook.id))) err(`hook: "${ph}" is banned in the hook${ref("hookOnlyPhrases")}`);
+if (hook) for (const ph of T.hookOnlyPhrases as string[]) if (phraseRe(ph).test(sceneText(hook.id))) styleErr(`hook: "${ph}" is banned in the hook${ref("hookOnlyPhrases")}`);
 
 for (const l of lines) {
   for (const mark of T.bannedMarks as string[]) {
     const hit = mark === ":" ? /(?<!\d):|:(?!\d)/.test(l.text) : l.text.includes(mark);
-    if (hit) err(`scene "${l.scene}" line ${l.index + 1}: "${mark.trim()}" in spoken text; write a sentence that stands alone: "${short(l.text, 50)}"${ref("bannedMarks")}`);
+    if (hit) styleErr(`scene "${l.scene}" line ${l.index + 1}: "${mark.trim()}" in spoken text; write a sentence that stands alone: "${short(l.text, 50)}"${ref("bannedMarks")}`);
   }
 }
 
@@ -216,7 +227,7 @@ else {
   voice = JSON.parse(readFileSync(voicePath, "utf8")) as Voice;
   if (voice.estimated) err(`voice.json is an estimate (0.33 s/word, no audio): run \`bun run tts ${id}\` (§4)`);
   else {
-    if (voice.hash !== voiceHash(n)) err(`voice.json is stale: narration.json or voice settings changed since the last TTS. Run \`bun run tts ${id}\` (§4)`);
+    if (voice.hash !== voiceHash(n)) err(footage ? `voice.json is stale: narration.json changed since the last cut. Run \`bun run cut ${id}\` (§5j)` : `voice.json is stale: narration.json or voice settings changed since the last TTS. Run \`bun run tts ${id}\` (§4)`);
     if (!voice.audio || !existsSync(p("public", voice.audio))) err(`audio public/${voice.audio} is missing: run \`bun run tts ${id} --force\``);
     if (!voice.engine.startsWith(n.voice.engine)) err(`voice.json was read by "${voice.engine}", narration.json declares "${n.voice.engine}"`);
   }
@@ -232,6 +243,59 @@ else {
     const per = voice.duration / factSentences;
     if (per > T.factEverySeconds * 1.5) warn(`one fact-bearing sentence every ${per.toFixed(1)} s (target about ${T.factEverySeconds} s)${ref("factEverySeconds")}`);
   }
+}
+
+// ------------------------------------------------------------------ footage (§5j)
+if (footage) {
+  const src = n.voice.source;
+  let sources: Source[] = [];
+  try {
+    sources = loadLedger().sources;
+  } catch {
+    /* reported above */
+  }
+  const rec = src ? sources.find((x) => x.id === src) : undefined;
+  const filmed = !!rawNarration.visual?.includes("talking-head");
+  const kinds = filmed ? ["footage"] : ["footage", "voice"];
+  if (!src) err(`voice.source is empty: the recording needs a sources.json record (kind "${kinds.join('" or "')}", licence, who recorded it) (§5j)`);
+  else if (!rec) err(`voice.source ${src} is not in docs/facts/sources.json (§5j)`);
+  else {
+    if (!kinds.includes(String(rec.kind))) err(`voice.source ${src} has kind "${rec.kind ?? ""}", expected "${kinds.join('" or "')}" (§5j)`);
+    if (!rec.licence) err(`voice.source ${src} has no licence: own footage says so ("own footage, all rights") (§5j)`);
+  }
+  const tr = loadTranscript(id);
+  const cuts = loadCuts(id);
+  const built = loadFootage(id);
+  if (!tr) err(`no transcript.json: run \`bun run ingest ${id} <file>\` (§5j)`);
+  else if (!cuts) err(`no cuts.json: run \`bun run cut ${id} --propose\` (§5j)`);
+  else if (cuts.transcript !== tr.hash) err(`cuts.json was made for another take: re-propose with \`bun run cut ${id} --propose --force\` (§5j)`);
+  else if (!built || built.cuts !== cutsHash(cuts) || built.transcript !== tr.hash) err(`footage.json is stale: cuts.json or the transcript changed since the last cut. Run \`bun run cut ${id}\` (§5j)`);
+  else {
+    if (filmed && !built.video) err(`footage.json has no video: the take was ingested as voice only. Re-run \`bun run ingest ${id} <file> --force\` with a video file (§5j)`);
+    else if (filmed && !existsSync(p("public", built.video))) err(`public/${built.video} is missing: run \`bun run cut ${id}\``);
+    const removed = removedSet(cuts);
+    for (const s of n.scenes) {
+      s.lines.forEach((l, i) => {
+        const at = `scene "${s.id}" line ${i + 1}`;
+        if (!l.words) return err(`${at} has no "words" range: a recorded line is a range of transcript words (§5j)`);
+        const said = keptText(tr, removed, l.words[0], l.words[1]);
+        if (said !== l.text) err(`${at} text differs from what was said ("${short(said, 40)}"): never retype a recorded line; fix spellings with "spelling" and re-run \`bun run cut ${id}\` (§5j)`);
+      });
+    }
+    for (const j of built.joins) {
+      if (j.db > T.footageJoinMaxDb) err(`join at ${j.at.toFixed(2)} s is ${j.db} dB, louder than ${T.footageJoinMaxDb} dB: the cut goes through a syllable. Move or widen it in cuts.json${ref("footageJoinMaxDb")}`);
+    }
+    for (const w of tr.words.filter((x) => x.suspect && !removed.has(x.i) && suspectKept(x, cuts.stretches) > SUSPECT_KEEP_MAX)) {
+      err(`${w.start.toFixed(1)}–${w.end.toFixed(1)} s: Whisper wrote only "${w.text}" over ${(w.end - w.start).toFixed(1)} s of speech, so the transcript is missing words there. Captions and facts would skip what was said: re-ingest with --prompt, ask the speaker and fix it, or cut the untranscribed part as a "stretches" entry (§5j)`);
+    }
+    // A word a `spelling` fix already replaced was confirmed with the speaker: no longer a doubt.
+    const shown = new Set(n.scenes.flatMap((s) => s.lines.flatMap((l) => words(applyMap(l.text, n.spelling)))));
+    const low = tr.words.filter((w) => !removed.has(w.i) && w.p < T.footageLowConfidence && /\d/.test(w.text) && words(w.text).some((x) => shown.has(x)));
+    for (const w of low.slice(0, 5)) warn(`word ${w.i} "${w.text}" is a number Whisper heard with ${Math.round(w.p * 100)}% confidence: check it against the footage${ref("footageLowConfidence")}`);
+  }
+  const lang = (n.language ?? "en").split("-")[0];
+  const cta = ((T.footageCtaPhrases as Record<string, string[]>)[lang] ?? []).filter((ph) => phraseRe(ph).test(lines[lines.length - 1]?.text ?? ""));
+  if (cta.length) warn(`the last line asks for "${cta.join('", "')}": a call to action is a logo in words. Cut so the video ends on the turn${ref("footageCtaPhrases")}`);
 }
 
 // ------------------------------------------------------------------ static scan of the video's tsx
@@ -254,6 +318,29 @@ for (const f of tsx) {
     if (f !== "Cover.tsx" && lowerScript.includes(m[1].toLowerCase())) warn(`${f}: on-frame text "${short(m[1], 40)}" repeats the narration word for word (§7c)`);
   }
   if (sw?.words?.length) for (const w of sw.words) if (phraseRe(w).test(src)) err(`${f}: strong word "${w}" typed into on-frame text; mask it (§7b)`);
+}
+
+// shared effects: punch count for every video; density and the speaker zone for talking-head
+const EFFECT_RE = /<(StrikeReplace|SlotWord|WordSlam|Typewriter|TypeStage|BigCount|CircleMark|ArrowMark|Underline|CrossOut|Stamp|CompareBars|ProgressRing|UnitGrid|Odometer)\b([^>]*)>/g;
+const effects = tsx.filter((f) => f !== "Cover.tsx").flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(EFFECT_RE)].map((m) => ({f, name: m[1], props: m[2]})));
+const punches = effects.filter((e) => e.name === "WordSlam" || e.name === "Stamp");
+if (punches.length > T.punchEffectsMax) warn(`${punches.length} punch effects (${punches.map((e) => e.name).join(", ")}), max ${T.punchEffectsMax}: the second cancels the first${ref("punchEffectsMax")}`);
+if (rawNarration.visual?.includes("talking-head")) {
+  if (voice && !voice.estimated && voice.duration > 0) {
+    const perMin = (effects.length * 60) / voice.duration;
+    const [lo, hi] = T.effectsPerMinute as [number, number];
+    if (perMin < lo || perMin > hi) warn(`${effects.length} effects in ${voice.duration.toFixed(0)} s is ${perMin.toFixed(1)}/min, target ${lo}–${hi}${ref("effectsPerMinute")}`);
+  }
+  const face = (rawNarration as {face?: {top: number; bottom: number}}).face;
+  if (footage && !(face && face.top >= 0 && face.bottom > face.top)) {
+    err('no "face": {top, bottom} in narration.json: measure the face band (frame px) from stills of cut.mp4, so effects never sit on it (§5j)');
+  } else if (face) {
+    const m = T.footageFaceMarginPx as number;
+    for (const e of effects) {
+      const top = Number(e.props.match(/\btop=\{(\d+)\}/)?.[1] ?? NaN);
+      if (top >= face.top - m && top < face.bottom) err(`${e.f}: <${e.name} top={${top}}> lands on the face (band ${face.top}–${face.bottom}, margin ${m}): move it above or below${ref("footageFaceMarginPx")}`);
+    }
+  }
 }
 
 // on-frame text share: scenes whose component draws a text component

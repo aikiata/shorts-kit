@@ -35,6 +35,7 @@ const WIDEN = 0.15;
 const id = videoArg("bun run tts <id> [--force]");
 const force = flag("force") !== undefined;
 const n = loadNarration(id);
+if (n.voice.engine === "recorded") die(`"${id}" uses a recorded voice: it comes from \`bun run ingest ${id} <file>\` and \`bun run cut ${id}\`, not TTS (§5j).`);
 const engine = ENGINES[n.voice.engine] ?? die(`unknown voice.engine "${n.voice.engine}"; use one of: ${Object.keys(ENGINES).join(", ")}`);
 const voiceName = n.voice.voice ?? engine.defaultVoice;
 const tempo = n.voice.tempo ?? 1;

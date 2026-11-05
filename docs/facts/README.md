@@ -77,7 +77,7 @@ it, and then the caveat is mandatory.
 | --- | --- | --- |
 | `id` | ✔ | `s-0001`, … |
 | `title` | ✔ | enough to cite it without opening another file |
-| `url` | ✔ | the page actually opened (not a search result, not a summary) |
+| `url` | ✔ | the page actually opened (not a search result, not a summary); none for the channel's own recording, whose `licence` starts with "own" (`"own footage, all rights reserved"`) |
 | `publisher` | ✔ | the body behind it |
 | `licence` | ✔ for assets | for images, footage, music: the licence name exactly as stated |
 | `accessed` | ✔ | `YYYY-MM-DD` |
@@ -85,7 +85,7 @@ it, and then the caveat is mandatory.
 Optional: `tier` (1 = the body that produced the number, 2 = encyclopaedia, 3 =
 popular press), `role` (`candidate-finder` for listicles, which may not back an
 on-screen fact; `rejected` for a source considered and dropped, with the reason),
-`kind` (`image`, `footage`, `music`, `sfx`, `font`), `attribution` (the provider's
+`kind` (`image`, `footage`, `voice`, `music`, `sfx`, `font`; `footage`/`voice` is also the record a recorded voice names in `voice.source`, §5j), `attribution` (the provider's
 string, **verbatim**, never rewritten), `modified` (e.g. "cut and looped").
 
 ## What validation checks

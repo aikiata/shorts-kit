@@ -252,7 +252,7 @@ type Status = "done" | "todo" | "warn" | "fail" | "unknown";
 type Step = {key: string; n: number; label: string; status: Status; detail: string; command: string; skill: string};
 
 type NarrationLine = {text?: string; fact?: string | string[]};
-type Narration = {id?: string; flow?: string; scenes?: {id: string; lines?: NarrationLine[]}[]};
+type Narration = {id?: string; flow?: string; voice?: {engine?: string}; scenes?: {id: string; lines?: NarrationLine[]}[]};
 type Voice = {hash?: string; estimated?: boolean; engine?: string; duration?: number; audio?: string | null; words?: unknown[]; lines?: unknown[]; scenes?: {id: string; start: number; end: number}[]};
 type Fact = {id: string; status?: string; caveat?: string};
 
@@ -320,7 +320,17 @@ const STEP_META: Record<string, {n: number; label: string; skill: string; comman
 // ── pipeline steps from docs/pipeline.json ──────────────────────────────
 // Built-in steps keep the checks above; steps a channel adds (sk-improve) are
 // checked by a simple evidence rule on disk. Missing file: the built-in order.
-type PipeStep = {key: string; n: number; label: string; skill?: string; command?: string; check?: "builtin"; evidence?: {file?: string; glob?: string; json?: string; nonEmpty?: string}};
+type PipeStep = {
+  key: string;
+  n: number;
+  label: string;
+  skill?: string;
+  command?: string;
+  check?: "builtin";
+  evidence?: {file?: string; glob?: string; json?: string; nonEmpty?: string};
+  /** Show the step only for one voice source: "tts" (written script) or "recorded" (§5j). */
+  when?: "tts" | "recorded";
+};
 const loadPipeline = (): PipeStep[] | null => {
   const r = readJson<{steps?: PipeStep[]}>(join(ROOT, "docs", "pipeline.json"));
   return Array.isArray(r.value?.steps) ? r.value!.steps! : null;
@@ -359,11 +369,12 @@ const evidenceStatus = (id: string, ev: PipeStep["evidence"]): {status: Status; 
   }
   return {status: "unknown", detail: "evidence rule has no file, glob or json"};
 };
-const applyPipeline = (id: string, builtin: Step[]): Step[] => {
+const applyPipeline = (id: string, builtin: Step[], voiceSource: "tts" | "recorded"): Step[] => {
   const pipe = loadPipeline();
   if (!pipe) return [...builtin].sort((a, b) => a.n - b.n);
   const out: Step[] = [];
   for (const p of pipe) {
+    if (p.when && p.when !== voiceSource) continue;
     const command = (p.command ?? "").replaceAll("{id}", id);
     if (p.check === "builtin" || (!p.evidence && builtin.some((b) => b.key === p.key))) {
       const b = builtin.find((x) => x.key === p.key);
@@ -442,7 +453,7 @@ const videoState = (id: string) => {
     }
     const audio = voice.audio ? join(ROOT, "public", voice.audio) : null;
     if (expect === null) add("tts", "unknown", `cannot check freshness (${why})`);
-    else if (expect !== voice.hash) add("tts", "todo", "stale: narration changed since the last TTS");
+    else if (expect !== voice.hash) add("tts", "todo", n.voice?.engine === "recorded" ? "stale: narration changed since the last cut" : "stale: narration changed since the last TTS");
     else if (!audio || !isFile(audio)) add("tts", "warn", `hash ok but audio file missing: public/${voice.audio ?? "?"}`);
     else add("tts", "done", `${voice.engine ?? "?"}, ${(voice.duration ?? 0).toFixed(1)} s`);
   }
@@ -505,7 +516,7 @@ const videoState = (id: string) => {
   else add("handoff", "todo", "no caption.txt / pinned-comment.txt");
 
   // display order = the sk-pipeline table (facts before brief)
-  const finalSteps = applyPipeline(id, steps);
+  const finalSteps = applyPipeline(id, steps, n?.voice?.engine === "recorded" ? "recorded" : "tts");
   steps.length = 0;
   steps.push(...finalSteps);
   const nextStep = steps.find((s) => s.status === "todo" || s.status === "fail" || s.status === "unknown");

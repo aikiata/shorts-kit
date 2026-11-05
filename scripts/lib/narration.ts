@@ -5,9 +5,24 @@ import type {Voice, VoiceLine, VoiceScene, VoiceWord} from "../../src/shared/tim
 import {videoDir} from "./paths";
 import {applyMap, tokens} from "./text";
 
-export type NarrationLine = {text: string; fact?: string; caption?: string};
+export type NarrationLine = {
+  text: string;
+  fact?: string;
+  caption?: string;
+  /** Footage only (§5j): the transcript word range [a, b] this line is; its text is generated from it. */
+  words?: [number, number];
+  /** Footage only: `false` marks a line that asserts nothing checkable (an opinion, a greeting). */
+  claim?: boolean;
+};
 export type NarrationScene = {id: string; hold?: number; lines: NarrationLine[]};
-export type NarrationVoice = {engine: string; voice?: string; model?: string; tempo?: number};
+export type NarrationVoice = {
+  engine: string;
+  voice?: string;
+  model?: string;
+  tempo?: number;
+  /** Footage only: the sources.json id (kind "footage") of the filmed take. */
+  source?: string;
+};
 export type Narration = {
   id: string;
   flow: string;

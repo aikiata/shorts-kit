@@ -1,10 +1,12 @@
 {
-  "_doc": "The pipeline steps, in order. Source of truth for the preview dashboard and the sk-pipeline table. Built-in steps (check: \"builtin\") are verified by the preview's own logic. A step you add needs an `evidence` rule the preview can check on disk: {\"file\": \"out/{id}/x.png\"}, {\"glob\": \"out/{id}/*-yt.mp4\"} or {\"json\": \"src/videos/{id}/x.json\", \"nonEmpty\": \"items\"}. Remove a step to hide it. Change steps with sk-improve and log it in SOUL.md's change log.",
+  "_doc": "The pipeline steps, in order. Source of truth for the preview dashboard and the sk-pipeline table. Built-in steps (check: \"builtin\") are verified by the preview's own logic. A step you add needs an `evidence` rule the preview can check on disk: {\"file\": \"out/{id}/x.png\"}, {\"glob\": \"out/{id}/*-yt.mp4\"} or {\"json\": \"src/videos/{id}/x.json\", \"nonEmpty\": \"items\"}. Remove a step to hide it. `when` (\"tts\" or \"recorded\") shows a step only for that voice source (§5j). Change steps with sk-improve and log it in SOUL.md's change log.",
   "steps": [
     {"key": "facts", "n": 2, "label": "Facts", "skill": "sk-facts", "command": "bun run facts", "check": "builtin"},
     {"key": "brief", "n": 4, "label": "Brief", "skill": "sk-brief", "command": "cp briefs/_template.md briefs/{id}.md   # then fill it in (sk-brief)", "check": "builtin"},
     {"key": "narration", "n": 5, "label": "Narration", "skill": "sk-narration", "command": "edit src/videos/{id}/narration.json   # sk-narration", "check": "builtin"},
-    {"key": "tts", "n": 6, "label": "TTS", "skill": "sk-narration", "command": "bun run tts {id}", "check": "builtin"},
+    {"key": "ingest", "n": 5.1, "label": "Ingest", "skill": "sk-narration", "command": "bun run ingest {id} <file> --lang <code>", "when": "recorded", "evidence": {"file": "src/videos/{id}/transcript.json"}},
+    {"key": "cut", "n": 5.2, "label": "Cut", "skill": "sk-narration", "command": "edit src/videos/{id}/cuts.json, then: bun run cut {id}", "when": "recorded", "evidence": {"json": "src/videos/{id}/footage.json", "nonEmpty": "audio"}},
+    {"key": "tts", "n": 6, "label": "TTS", "skill": "sk-narration", "command": "bun run tts {id}   # recorded voice: bun run cut {id}", "check": "builtin"},
     {"key": "lint", "n": 7, "label": "Lint", "skill": "sk-narration", "command": "bun run lint {id}", "check": "builtin"},
     {"key": "storyboard", "n": 7.5, "label": "Storyboard", "skill": "sk-scene", "command": "bun run storyboard {id} --init   # then fill in camera and onScreen, get it approved", "check": "builtin"},
     {"key": "scenes", "n": 8, "label": "Scenes", "skill": "sk-scene", "command": "bun run dev {id}   # then: bun run check", "check": "builtin"},

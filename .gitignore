@@ -2,6 +2,8 @@ node_modules/
 out/
 .cache/
 public/audio/
+# Recorded voice and cut takes, rebuilt by `bun run cut <id>` (§5j)
+public/footage/
 .env
 .env.*
 !.env.example

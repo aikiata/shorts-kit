@@ -26,6 +26,7 @@ combination in `narration.json` → `visual`.
 | [`illustrated-scene`](../visuals/illustrated-scene.md) | §5g | no usable photos or footage: build one world from simple drawn layers and stay in it |
 | [`satellite-map`](../visuals/satellite-map.md) | §5h | the claim lives on the ground: fly over real imagery and draw the facts on it |
 | [`globe`](../visuals/globe.md) | §5i | the claim spans the planet: lines on a sphere, true distances, the pull-out reveal |
+| [`talking-head`](../visuals/talking-head.md) | §5j | a filmed take is the voice: words as said, cut by reason, effects off the face |
 
 The kit ships no map or globe types. If your niche needs one, add it as a visual
 type (see the README); the general rules below still apply.
