@@ -188,6 +188,7 @@ once read with the wrong voice.
 | --- | --- | --- |
 | `edge` (default) | free, no key | online Microsoft voices; good English; retry on empty streams |
 | `elevenlabs` | per character, `ELEVENLABS_API_KEY` in `.env` | `with-timestamps` gives per-character timing from the same request, so no recogniser is needed; use a model that lists your language; do not send its own speed setting |
+| `vieneu` | free, offline, local Python env `.venv-vieneu` | Vietnamese (VieNeu-TTS v3 Turbo, 48 kHz, Apache-2.0); `voice` is a preset name or a 3–8 s reference `.wav`; `model` is `v3turbo` or `v3nano`; one file per line, no word timestamps (words spread over the line); setup in the README |
 
 API keys live only in `.env` (gitignored). An agent should not read `.env`.
 

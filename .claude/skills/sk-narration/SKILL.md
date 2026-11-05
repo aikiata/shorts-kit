@@ -1,6 +1,6 @@
 ---
 name: sk-narration
-description: Writes or edits the spoken script of a short in src/videos/<id>/narration.json, generates the voice track with bun run tts (Edge by default, ElevenLabs optional), and runs the machine lint. Use when the user says "write the script", "change this line", "fix the pronunciation", "it reads too fast", "add a pause", "re-run TTS", "change the voice", or when lint reports narration errors. Steps 5, 6 and 7 of sk-pipeline.
+description: Writes or edits the spoken script of a short in src/videos/<id>/narration.json, generates the voice track with bun run tts (Edge by default, ElevenLabs or VieNeu for Vietnamese optional), and runs the machine lint. Use when the user says "write the script", "change this line", "fix the pronunciation", "it reads too fast", "add a pause", "re-run TTS", "change the voice", or when lint reports narration errors. Steps 5, 6 and 7 of sk-pipeline.
 ---
 
 # sk-narration: script, TTS, lint

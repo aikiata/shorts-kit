@@ -77,6 +77,8 @@ a NAS and applied that channel's own swearing rule; neither is part of this kit)
 - A voice, one of:
   - `say` (built into macOS): free and offline. The example uses it.
   - [ElevenLabs](https://elevenlabs.io): much better quality, needs an API key.
+  - [VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS) (`vieneu`): Vietnamese, free
+    and offline on CPU, 25 preset voices or clone your own. Needs Python 3.10+.
   - `edge` (Microsoft Edge online voices): free, but the service sometimes stops
     answering. Do not rely on it.
 
@@ -104,6 +106,18 @@ bun install
 ```
 
 For ElevenLabs, copy `.env.example` to `.env` and set `ELEVENLABS_API_KEY`.
+
+For VieNeu (Vietnamese), install it once into a local Python env (needs [uv](https://docs.astral.sh/uv/)):
+
+```bash
+uv venv --python 3.12 .venv-vieneu
+uv pip install --python .venv-vieneu/bin/python vieneu
+.venv-vieneu/bin/python scripts/lib/engines/vieneu_bridge.py --voices   # downloads the model (~600 MB), lists voices
+```
+
+Then in `narration.json`: `"voice": {"engine": "vieneu", "voice": "Thiện Minh"}`. `voice`
+is a preset name or the path to a 3–8 s `.wav` to clone (only a voice you have the
+right to use).
 
 ## Check that it works
 

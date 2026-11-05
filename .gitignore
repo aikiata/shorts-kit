@@ -11,3 +11,7 @@ public/audio/
 # Satellite mosaics are rebuilt by `bun run satellite <id>`
 public/img/sat/*
 !public/img/sat/README.md
+
+# VieNeu TTS Python env (scripts/lib/engines/vieneu.ts)
+.venv-vieneu/
+__pycache__/
