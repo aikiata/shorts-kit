@@ -4,7 +4,8 @@
  */
 import {useCallback, useEffect, useMemo, useRef, useState, type ReactNode} from "react";
 import {createRoot} from "react-dom/client";
-import {ArrowLeft, Check, Code02, Copy01, Globe01, MessageChatCircle, PlayCircle, RefreshCw01, Users01, X} from "@untitledui/icons";
+import {ArrowLeft, Check, Code02, Copy01, Globe01, MessageChatCircle, RefreshCw01, Users01, X} from "@untitledui/icons";
+import logoUrl from "../../docs/assets/logo.svg";
 import {Badge, BadgeWithDot} from "./ui/badges";
 import {Button} from "./ui/button";
 import {ButtonUtility} from "./ui/button-utility";
@@ -958,7 +959,7 @@ const Shell = ({children, at, error}: {children: ReactNode; at: number | null; e
       <header className="sticky top-0 z-40 border-b border-secondary bg-primary/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
           <a href="#/" className="flex items-center gap-2 font-semibold text-primary">
-            <PlayCircle className="size-5 text-fg-brand-primary" />
+            <img src={logoUrl} alt="" className="size-6 rounded-md" />
             shorts-kit preview
           </a>
           <div className="flex items-center gap-2 text-xs text-tertiary">
@@ -999,9 +1000,7 @@ const Footer = () => (
   <footer className="mt-10 border-t border-secondary bg-secondary_alt">
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 md:flex-row md:items-center md:justify-between">
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-solid text-white shadow-xs">
-          <PlayCircle className="size-5" />
-        </div>
+        <img src={logoUrl} alt="shorts-kit" className="size-10 shrink-0 rounded-xl shadow-xs" />
         <div className="min-w-0">
           <p className="text-md font-semibold text-primary">shorts-kit</p>
           <p className="mt-0.5 text-sm text-tertiary">Narrated vertical shorts with a coding agent and Remotion.</p>
