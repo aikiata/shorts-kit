@@ -686,6 +686,7 @@ const ScriptTab = ({v}: {v: VideoState}) => {
   const factOf = (id?: string | null) => (id ? facts?.find((f) => f.id === id) : undefined);
   const play = (start: number) => { const a = audio.current; if (!a) return; a.currentTime = Math.max(0, start - 0.05); void a.play(); };
   const real = !!v.voice?.audio && !voice?.estimated;
+  const recorded = (v.voice as {engine?: string} | null)?.engine === "recorded";
   const lang = (nar as {language?: string}).language ?? "en";
   const wps = lang.startsWith("vi") ? 3.7 : 3.1;
   const narLines = (nar.scenes ?? []).flatMap((s) => s.lines ?? []);
@@ -729,8 +730,10 @@ const ScriptTab = ({v}: {v: VideoState}) => {
                           {(() => {
                             // Show the script as written (with punctuation); borrow each word's timing
                             // when the token count matches the timed words, which it does for plain text.
-                            const toks = l.text.split(/\s+/).filter(Boolean);
-                            if (!lw.length || toks.length !== lw.length) return l.text;
+                            // A recorded voice has no script: show what was said (spelling applied).
+                            const shown = recorded && vl ? vl.text : l.text;
+                            const toks = shown.split(/\s+/).filter(Boolean);
+                            if (!lw.length || toks.length !== lw.length) return shown;
                             return toks.map((tok, k) => {
                               const w = lw[k];
                               const on = t >= w.start && t < w.end;
@@ -742,6 +745,7 @@ const ScriptTab = ({v}: {v: VideoState}) => {
                             });
                           })()}
                         </p>
+                        {recorded && vl && vl.text !== l.text && <p className="mt-1 text-xs text-quaternary">Whisper heard: {l.text}</p>}
                         {l.caption && <p className="mt-1 text-sm text-tertiary">{l.caption}</p>}
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-tertiary">
                           {real && vl ? <span className="tabular-nums">{vl.start.toFixed(1)}–{vl.end.toFixed(1)} s</span> : <span className="tabular-nums">≈ {(countWords(l.text) / wps).toFixed(1)} s</span>}
@@ -767,7 +771,7 @@ const ScriptTab = ({v}: {v: VideoState}) => {
 };
 
 // ── storyboard tab: the shot list, reviewed before scene code ──────────────
-type SbShot = {id: string; line: number; anchor?: string | null; camera: string; onScreen: string; text?: string | null; visual?: string; transition?: string; sfx?: string | null; notes?: string; status: "planned" | "approved" | "built"};
+type SbShot = {id: string; line: number; lineText?: string; anchor?: string | null; camera: string; onScreen: string; text?: string | null; visual?: string; transition?: string; sfx?: string | null; notes?: string; status: "planned" | "approved" | "built"};
 type SbJson = {shots?: SbShot[]};
 const FPS_UI = 30;
 const norm = (x: string) => x.toLowerCase().normalize("NFC").replace(/[^\p{L}\p{N}%]+/gu, "");
@@ -802,8 +806,11 @@ const StoryboardTab = ({v}: {v: VideoState}) => {
     );
   }
   if (!sb) return <Card title="Storyboard"><LoadingIndicator type="line-spinner" size="sm" label="Reading storyboard.json…" /></Card>;
-  const lineTexts = (nar?.scenes ?? []).flatMap((s) => (s.lines ?? []).map((l) => ({scene: s.id, text: l.text})));
   const vlines = voice?.lines ?? [];
+  // What the viewer sees: the caption text from voice.json (spelling applied), not the raw
+  // script or Whisper's transcript. Before a real voice exists, the script as written.
+  const narFlat = (nar?.scenes ?? []).flatMap((s) => (s.lines ?? []).map((l) => ({scene: s.id, text: l.text})));
+  const lineTexts = narFlat.map((l, i) => ({...l, text: vlines[i]?.text ?? l.text}));
   const words = voice?.words ?? [];
   const real = !!voice && !voice.estimated;
   const shots = sb.shots ?? [];
@@ -817,7 +824,7 @@ const StoryboardTab = ({v}: {v: VideoState}) => {
     return l.start;
   };
   const starts = shots.map(startOf);
-  const total = (v.voice?.duration ?? 0) + 3;
+  const total = (v.voice?.duration ?? 0) + ((nar as {outroHold?: number} | null)?.outroHold ?? 3);
   const endOf = (i: number) => starts.slice(i + 1).find((x) => x !== null) ?? total;
   const stillAt = (a: number, b: number) => {
     const all = v.files.stills.map((f) => ({f, frame: Number(/(\d+)\.(png|jpe?g)$/i.exec(f.path)?.[1] ?? NaN)})).filter((x) => !Number.isNaN(x.frame));
@@ -866,6 +873,8 @@ const StoryboardTab = ({v}: {v: VideoState}) => {
             const still = a !== null ? stillAt(a, b) : null;
             const line = lineTexts[s.line];
             const todo = /TODO/.test(`${s.camera} ${s.onScreen}`);
+            // The shot was planned against `lineText`; a different line now means the plan is stale.
+            const changed = !!s.lineText && !!line && norm(s.lineText) !== norm(line.text);
             return (
               <li key={s.id} className="min-w-0">
                 <button type="button" onClick={() => play(a)} className={cx("grid w-full min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-3 overflow-hidden rounded-lg p-3 text-left ring-1 ring-inset transition sm:grid-cols-[96px_minmax(0,1fr)]", active ? "bg-brand-primary_alt ring-brand-500" : todo ? "ring-[color:var(--color-fg-warning-secondary)]" : "ring-secondary hover:bg-primary_hover")}>
@@ -881,6 +890,7 @@ const StoryboardTab = ({v}: {v: VideoState}) => {
                     <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
                       <span className="font-mono font-semibold text-primary">{s.id}</span>
                       <Badge size="sm" color={statusColor[s.status] ?? "gray"}>{s.status}</Badge>
+                      {changed && <Badge size="sm" color="error">line changed · bun run storyboard {v.id} --sync</Badge>}
                       {a !== null && <span className="text-tertiary tabular-nums">{a.toFixed(1)}–{b.toFixed(1)} s</span>}
                       {s.transition && <Badge size="sm" color="gray">{s.transition}</Badge>}
                       {s.visual && <Badge size="sm" color="gray">{s.visual}</Badge>}

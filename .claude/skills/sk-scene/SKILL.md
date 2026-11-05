@@ -34,6 +34,9 @@ video.** Something two videos need goes to `src/shared/<kind>/`, written against
    the user (preview, Storyboard tab) and wait for approval; set those shots to
    `approved`. Build only approved shots, mark each `built` after you have looked at its
    still, and change the storyboard before the scene when the plan changes.
+   After any change to the words (script edit, `bun run tts`, `bun run cut`), run
+   `bun run storyboard <id> --sync`: shots whose line changed go back to `planned` and
+   need the user's approval again before their scenes change.
    Schema and rules: `docs/storyboard.md`.
 1. **Check `src/shared/` before writing a component.** It already handles the
    9:16 frame, theme and safe zones. External component libraries bring their own

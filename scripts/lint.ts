@@ -367,7 +367,7 @@ if (!existsSync(p("briefs", `${id}.md`))) warn(`no briefs/${id}.md: the brief ho
   else if (!sb.value) {
     if (voice && !voice.estimated) warn(`no storyboard yet: plan the shots before building scenes (bun run storyboard ${id} --init, docs/storyboard.md)`);
   } else {
-    for (const i of checkStoryboard(sb.value, lines.length, voice ?? null, visualIds)) (i.level === "error" ? err : warn)(`storyboard: ${i.message}`);
+    for (const i of checkStoryboard(sb.value, lines.map((l) => l.display), voice ?? null, visualIds)) (i.level === "error" ? err : warn)(`storyboard: ${i.message}`);
     const todo = sb.value.shots.filter((x) => /TODO/.test(`${x.camera} ${x.onScreen}`)).length;
     if (todo) warn(`storyboard: ${todo} shot${todo > 1 ? "s" : ""} still TODO`);
   }

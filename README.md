@@ -190,7 +190,7 @@ that: on a real take it misheard a phrase as a number and dropped whole words.
 | `bun run tts <id> [--force]` | synthesise the whole script, write the audio and `voice.json` |
 | `bun run ingest <id> <file>` | recorded voice instead of TTS (a filmed take or a voice recording): Whisper transcript and proposed cuts |
 | `bun run cut <id>` | apply the reviewed `cuts.json`: the voice track (and the cut video for `talking-head`), `voice.json` |
-| `bun run storyboard <id> [--init]` | the shot list after the voice: scaffold it, then print each shot with its time and what to fix |
+| `bun run storyboard <id> [--init\|--sync]` | the shot list after the voice: scaffold it, print each shot with its time and what to fix; `--sync` re-pins shots to their lines after the words change |
 | `bun run lint <id>` | style, facts, length and timing checks from `thresholds.json` |
 | `bun run facts` | validate the fact ledger |
 | `bun run still <id> --frame=N [--safe]` | one frame to `out/<id>/`, with the safe-zone overlay if `--safe` |

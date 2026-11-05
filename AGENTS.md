@@ -40,7 +40,7 @@ bun run tts <id> [--force]       # voice.mp3 + voice.json
 bun run ingest <id> <file>       # recorded voice: Whisper transcript + proposed cuts (§5j)
 bun run cut <id>                 # apply cuts.json: voice.mp3 (+ cut.mp4), voice.json
 bun run lint <id>                # checks from docs/soul/thresholds.json
-bun run storyboard <id> [--init] # shot list after the voice; approved before scenes
+bun run storyboard <id> [--init|--sync] # shot list after the voice; --sync after tts/cut
 bun run satellite <id>           # satellite mosaics (map.json shots)
 bun run geo <id>                 # coasts, borders, rivers (Natural Earth)
 bun run facts                    # validate docs/facts/*.json

@@ -9,6 +9,7 @@ them from a plan that lives only in the agent's head is where most rework came f
 ```bash
 bun run storyboard <id> --init   # one planned shot per narration line, to fill in
 bun run storyboard <id>          # print the shots with their times, and what to fix
+bun run storyboard <id> --sync   # after every tts / cut: re-pin shots to their lines
 bun run preview                  # Storyboard tab: each shot with its line, still and playback
 ```
 
@@ -18,7 +19,7 @@ bun run preview                  # Storyboard tab: each shot with its line, stil
 
 ```json
 {"shots": [
-  {"id": "s01", "line": 0, "anchor": null,
+  {"id": "s01", "line": 0, "lineText": "Sunlight looks white, so why is the sky blue?", "anchor": null,
    "camera": "slow push in over the whole video (zoom 1.00 to 1.05)",
    "onScreen": "empty day sky over a calm sea, sun upper right",
    "text": null, "visual": "illustrated-scene", "transition": "cut", "sfx": null,
@@ -30,6 +31,7 @@ bun run preview                  # Storyboard tab: each shot with its line, stil
 | --- | --- |
 | `id` | stable shot id (`s01`, `s02`, …); scenes and stills can refer to it |
 | `line` | global narration line index (0 = the first line of the video) |
+| `lineText` | the line's on-screen text when the shot was planned (written by `--init` and `--sync`, never typed) |
 | `anchor` | optional word or phrase inside that line where the shot starts; default the line start |
 | `camera` | what the camera does, in plain words, with numbers when they matter |
 | `onScreen` | the world, the figure, what appears or changes during the shot |
@@ -43,6 +45,23 @@ bun run preview                  # Storyboard tab: each shot with its line, stil
 **No times are stored.** A shot starts at its line (or anchor word) as timed in
 `voice.json` and ends where the next shot starts. A new TTS run moves every shot with
 the voice, and an anchor that no longer exists in its line is an error.
+
+**The line is pinned by its text.** `line` is only a position: insert a sentence and
+every later shot would point at the wrong line, still `approved`. So each shot keeps
+`lineText`, and after every `bun run tts` or `bun run cut` (both remind you) run
+`bun run storyboard <id> --sync`:
+
+| What happened to the line | `--sync` does |
+| --- | --- |
+| moved (a sentence inserted or removed before it) | moves the shot with it, status kept |
+| rewritten (new words, a spelling fix, a re-cut) | keeps the shot, sets it back to `planned`, notes the old line |
+| removed | moves the shot to `removed` (delete its scene code if it has any) |
+| new line with no shot | adds a `planned` TODO shot |
+
+Lint fails an `approved` or `built` shot whose `lineText` no longer matches its line:
+an approval covers the sentence it was given for, not whatever sits at that index now.
+The text compared is the **on-screen** text (with `spelling` applied), the same the
+preview shows and the captions render.
 
 ## Rules
 
@@ -58,3 +77,5 @@ the voice, and an anchor that no longer exists in its line is an error.
    builds only `approved` shots and marks them `built` after looking at a still.
 7. **Changing the plan after building** means editing the storyboard first, then the
    scene, so the file stays the truth.
+8. **Changing the words means syncing the storyboard.** Script edit, TTS re-run, new cut:
+   `--sync`, then re-check and re-approve the shots it set back to `planned`.

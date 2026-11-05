@@ -25,6 +25,7 @@ import {
 } from "./lib/narration";
 import {audioDir, cacheDir, die, ensureDir, flag, p, videoArg, videoDir} from "./lib/paths";
 import {decodePcm, must} from "./lib/proc";
+import {storyboardHint} from "./lib/storyboard";
 import {loadThresholds} from "./lib/thresholds";
 
 const RATE = 48000;
@@ -214,6 +215,8 @@ console.log(`+ public/${audioRel}  ${voice.duration.toFixed(2)} s, ${vlines.leng
 console.log(`+ src/videos/${id}/voice.json (hash ${hash})`);
 if (skipped) console.log(`  ! ${skipped} line cut(s) skipped: no quiet point between the lines, natural gap kept (§4)`);
 console.log("  Now listen to the whole file, end to end, and check it for loops and clipped syllables (§4).");
+const sbHint = storyboardHint(id, lines.map((l) => l.display));
+if (sbHint) console.log(sbHint);
 
 const T = loadThresholds();
 const seconds = voice.duration + n.outroHold;

@@ -42,6 +42,7 @@ import {
 import {flatLines, lineWords, loadNarration, scenesFromLines, voiceHash, writeVoice, type Narration, type NarrationLine, type NarrationScene} from "./lib/narration";
 import {audioDir, die, ensureDir, flag, p, videoArg, videoDir} from "./lib/paths";
 import {decodePcm, must} from "./lib/proc";
+import {storyboardHint} from "./lib/storyboard";
 import {loadThresholds} from "./lib/thresholds";
 
 const id = videoArg("bun run cut <id> [--propose] [--force]");
@@ -365,4 +366,6 @@ console.log(`+ src/videos/${id}/voice.json, footage.json, narration.json  ${vlin
 for (const x of notes) console.log(`  ${x}`);
 const loud = joins.filter((j) => j.db > T.footageJoinMaxDb);
 if (loud.length) console.log(`  ! ${loud.length} join(s) louder than ${T.footageJoinMaxDb} dB (a cut through a syllable?) at ${loud.map((j) => `${j.at.toFixed(2)} s`).join(", ")}: listen there, widen or move the cut`);
+const sbHint = storyboardHint(id, flat.map((l) => l.display));
+if (sbHint) console.log(sbHint);
 console.log(`  Now ${withVideo ? "watch cut.mp4" : "listen to voice.mp3"} end to end: every join, every first and last syllable (§5j).`);

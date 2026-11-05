@@ -139,6 +139,8 @@ bun run cut <id>
 After the voice, plan every shot and get it approved before writing scene code:
 `bun run storyboard <id> --init`, fill it in, review it in `bun run preview`
 (Storyboard tab), set the shots to `approved`. See [`storyboard.md`](storyboard.md).
+After any later change to the words (script, TTS, cut): `bun run storyboard <id> --sync`,
+then re-approve the shots it sent back to `planned`.
 
 ## 6. Scenes: `sk-scene`
 
