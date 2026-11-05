@@ -74,13 +74,14 @@ a NAS and applied that channel's own swearing rule; neither is part of this kit)
 - [Bun](https://bun.sh) 1.3 or later
 - [ffmpeg](https://ffmpeg.org) and ffprobe on your `PATH`
 - A coding agent: [Claude Code](https://claude.com/claude-code), Codex, OpenCode, ...
-- A voice, one of:
-  - `say` (built into macOS): free and offline. The example uses it.
-  - [ElevenLabs](https://elevenlabs.io): much better quality, needs an API key.
-  - [VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS) (`vieneu`): Vietnamese, free
-    and offline on CPU, 25 preset voices or clone your own. Needs Python 3.10+.
-  - `edge` (Microsoft Edge online voices): free, but the service sometimes stops
-    answering. Do not rely on it.
+- A voice. The default depends on the video's language; pick another any time:
+  - **English → `edge`** (Microsoft Edge online voices): free, no key. The service
+    sometimes stops answering; `bun run tts` retries.
+  - **Vietnamese → `vieneu`** ([VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS)):
+    free and offline on CPU, 25 preset voices or clone your own. Needs Python 3.10+.
+  - [ElevenLabs](https://elevenlabs.io): best quality in either language, needs an API key.
+  - `say` (built into macOS): free and offline, for testing only. The example uses it
+    so the kit runs with no network.
 
 Install the tools:
 
@@ -134,7 +135,7 @@ bun run encode example     # out/example/example-upload.mp4, ready to upload
 bun run preview            # open http://127.0.0.1:7788
 ```
 
-On Linux or Windows there is no `say`: set `"engine": "elevenlabs"` in
+On Linux or Windows there is no `say`: set `"engine": "edge"` (or `"elevenlabs"`) in
 `src/videos/example/narration.json` first.
 
 ## Make your own channel

@@ -47,6 +47,13 @@ const audioOut = p("public", audioRel);
 const prev = existsSync(voicePath) ? (JSON.parse(readFileSync(voicePath, "utf8")) as Voice) : null;
 
 console.log(`tts ${id}: engine ${engine.name}, voice ${voiceName || "(none)"}, tempo ${tempo}`);
+// §4 default engine per language: a hint only, the engine in narration.json wins
+const DEFAULT_ENGINE: Record<string, string> = {en: "edge", vi: "vieneu"};
+const lang = (n.language ?? "").toLowerCase().split("-")[0];
+const suggested = DEFAULT_ENGINE[lang];
+if (suggested && engine.name !== suggested && engine.name !== "elevenlabs") {
+  console.log(`  hint: the default engine for "${n.language}" is "${suggested}" (§4); keeping "${engine.name}" as set in narration.json`);
+}
 if (!force && prev && prev.hash === hash && !prev.estimated && existsSync(audioOut)) {
   console.log(`= script and voice settings unchanged (hash ${hash}); no engine call. --force re-reads.`);
   process.exit(0);

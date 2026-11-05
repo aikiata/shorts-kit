@@ -21,7 +21,9 @@ goes in the change log at the bottom of `SOUL.md`.
 Use when `SOUL.md`'s change log has no entries, or the user asks to set up the kit.
 
 1. **Ask, one short round:** niche and audience; language (BCP-47) and caption
-   language; platforms (TikTok, Shorts, Reels); voice (engine, voice id, tempo);
+   language; platforms (TikTok, Shorts, Reels); voice (engine, voice id, tempo;
+   offer the default for their language from §4: English `edge`, Vietnamese
+   `vieneu`, and keep whatever they pick instead);
    tone (dry, warm, irreverent; whether strong words are acceptable); target video
    length; anything in the defaults they already know they dislike.
 2. **Edit the data half** in `docs/soul/thresholds.json`, for example:

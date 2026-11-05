@@ -1,6 +1,6 @@
 ---
 name: sk-narration
-description: Writes or edits the spoken script of a short in src/videos/<id>/narration.json, generates the voice track with bun run tts (Edge by default, ElevenLabs or VieNeu for Vietnamese optional), and runs the machine lint. Use when the user says "write the script", "change this line", "fix the pronunciation", "it reads too fast", "add a pause", "re-run TTS", "change the voice", or when lint reports narration errors. Steps 5, 6 and 7 of sk-pipeline.
+description: Writes or edits the spoken script of a short in src/videos/<id>/narration.json, generates the voice track with bun run tts (by default Edge for English, VieNeu for Vietnamese; ElevenLabs optional), and runs the machine lint. Use when the user says "write the script", "change this line", "fix the pronunciation", "it reads too fast", "add a pause", "re-run TTS", "change the voice", or when lint reports narration errors. Steps 5, 6 and 7 of sk-pipeline.
 ---
 
 # sk-narration: script, TTS, lint
@@ -35,16 +35,20 @@ carries a hash of the script it was made from.
      `spelling` (caption-only) and respellings in `pronounce` (spoken-only).
    - Silence between lines and scenes comes from `pause.line` / `pause.scene`,
      not from punctuation tricks.
-5. **Generate the voice:**
+5. **Engine default by language** (§4, "Pick the engine by language"): when the
+   user has not chosen an engine, use English → `edge`, Vietnamese → `vieneu`, and
+   say which one you used. It is a default, not a rule: an engine the user picked
+   stays. If `vieneu` is not installed, give them the setup commands from the README.
+6. **Generate the voice:**
    ```bash
    bun run tts <id>            # whole script in one request, word timestamps
    bun run tts <id> --force    # re-synthesise even if the hash matches
    ```
    The whole script is read in one pass so intonation carries across sentences;
    per-line synthesis sounds like a list.
-6. **Listen to the whole track.** TTS engines can repeat or loop a phrase, and
+7. **Listen to the whole track.** TTS engines can repeat or loop a phrase, and
    that passes every numeric check. Machines count words; only ears catch rhythm.
-7. **Lint:**
+8. **Lint:**
    ```bash
    bun run lint <id>
    ```
