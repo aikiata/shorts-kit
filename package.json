@@ -22,6 +22,7 @@
     "dev": "bun scripts/remotion.ts dev",
     "storyboard": "bun scripts/storyboard.ts",
     "tts": "bun scripts/tts.ts",
+    "from": "bun scripts/from.ts",
     "ingest": "bun scripts/ingest.ts",
     "cut": "bun scripts/cut.ts",
     "lint": "bun scripts/lint.ts",

@@ -22,9 +22,12 @@ import {join} from "node:path";
 import type {Voice, VoiceLine, VoiceWord} from "../src/shared/timings";
 import {mergeCuts, proposeCuts, reviewText} from "./lib/cutplan";
 import {
+  clipAt,
+  clipsOf,
   CUT_REASONS,
   cutsHash,
   cutsPath,
+  bare,
   endsSentence,
   FOOTAGE_ENGINE,
   footageCache,
@@ -63,6 +66,8 @@ if (flag("propose") !== undefined) {
     pad: T.footagePadSeconds,
     retakeWindow: T.footageRetakeWindowWords,
     lowConfidence: lowConf,
+    clipRetakeShare: T.footageClipRetakeShare,
+    clipRetakeMinWords: T.footageClipRetakeMinWords,
   });
   await Bun.write(cutsPath(id), `${JSON.stringify(cuts, null, 2)}\n`);
   console.log(`+ src/videos/${id}/cuts.json  ${cuts.cuts.length} proposed cuts\n\n${reviewText(t, cuts, lowConf)}`);
@@ -134,6 +139,8 @@ const quietRuns = (a: number, b: number, min: number): [number, number][] => {
   return out;
 };
 
+const clips = clipsOf(t);
+
 type Piece = {start: number; end: number; startDb: number; endDb: number; kind: Join["kind"]};
 const pieces: Piece[] = [];
 const head = quietest(Math.max(0, kept[0].start - cuts.pad - 0.15), Math.max(0, kept[0].start - cuts.pad * 0.5));
@@ -143,6 +150,23 @@ for (let k = 0; k < kept.length; k++) {
   const next = kept[k + 1];
   if (!next) break;
   const consecutive = next.i === w.i + 1;
+  const cw = clipAt(clips, w.start);
+  const cn = clipAt(clips, next.start);
+  if (cw !== cn) {
+    // The change to another filmed clip: always a join, at the clip boundary, never
+    // a silence to shorten across. Trim the dead air at the end of one clip and the
+    // start of the next to the quiet runs nearest the words; the camera already cut.
+    const b = clips[cn].start;
+    const tailRun = quietRuns(w.end - 0.05, Math.min(b, w.end + 1.5), 0.04)[0];
+    const headRun = quietRuns(Math.max(b, next.start - 1.5), next.start + 0.1, 0.04).pop();
+    const endT = tailRun ? Math.min(b, tailRun[0] + Math.min(cuts.pad, (tailRun[1] - tailRun[0]) / 2)) : Math.min(b, w.end + cuts.pad);
+    const startT = headRun ? Math.max(b, headRun[1] - Math.min(cuts.pad, (headRun[1] - headRun[0]) / 2)) : Math.max(b, next.start - cuts.pad);
+    cur.end = endT;
+    cur.endDb = db(Math.max(0, endT - 0.011));
+    pieces.push(cur);
+    cur = {start: startT, end: 0, startDb: db(startT + 0.011), endDb: -120, kind: "clip"};
+    continue;
+  }
   if (consecutive && next.start - w.end <= cuts.maxGap) continue;
   // Whisper's word edges are often 100–300 ms off, so cut points come from the
   // AUDIO: the quiet runs between the two words, never a word edge itself.
@@ -254,17 +278,100 @@ type RLine = NarrationLine & {words?: [number, number]};
 const hasRanges = n.scenes.some((s) => s.lines.some((l) => Array.isArray((l as RLine).words)));
 const notes: string[] = [];
 
-/** Sentence ranges over transcript indices [a, b], optionally limited to a span. */
+/**
+ * Sentence ranges over transcript indices [a, b], optionally limited to a span.
+ * Whisper often writes Vietnamese with no full stops at all (a 3-minute take came
+ * back as two "sentences"), so a line also ends where the speech does: a pause of
+ * LINE_PAUSE s, a capitalised common word (see opensSentence), a clip change, or at
+ * LINE_MAX_WORDS words (split at the longest pause inside).
+ */
+const LINE_PAUSE = 0.6;
+const LINE_MAX_WORDS = T.maxWordsPerSentence as number;
+const capital = (s: string) => /^\p{Lu}/u.test(s) && !/^\p{Lu}+$/u.test(s.replace(/[^\p{L}]/gu, ""));
+// A capitalised word opens a sentence only if the same word is also written in
+// lower case somewhere in the take ("Sáng nay" vs "sáng hơn", "Thì" vs "thì");
+// a word that is always capitalised is a name ("Siri", "Việt", "Sài Gòn"), not a start.
+const lowerSeen = new Set(t.words.filter((w) => /^\p{Ll}/u.test(w.text)).map((w) => bare(w.text)));
+const capCount = new Map<string, number>();
+for (const w of t.words) if (capital(w.text)) capCount.set(bare(w.text), (capCount.get(bare(w.text)) ?? 0) + 1);
+/**
+ * Does word i open a sentence? A capitalised word does when it is a common word
+ * written in lower case elsewhere ("Sáng nay" vs "sáng hơn"), or when it is
+ * capitalised only once and the next word is lower case ("Tức là", "Nếu xuất").
+ * Names repeat capitalised ("Siri", "Việt") or come in capitalised runs
+ * ("Vinh Xô", "Premier League"): those never open a sentence.
+ */
+const openers = new Set(((T.sentenceOpeners as Record<string, string[]>)?.[t.language] ?? []).map(bare));
+const opensSentence = (i: number) => {
+  const w = t.words[i];
+  if (!w || !capital(w.text)) return false;
+  // a common word ("Thì", "Và", "Đó") opens a sentence even right after a name
+  if (lowerSeen.has(bare(w.text)) || openers.has(bare(w.text))) return true;
+  if (capital(t.words[i - 1]?.text ?? "")) return false; // inside a capitalised run: a name
+  const nx = t.words[i + 1];
+  return (capCount.get(bare(w.text)) ?? 0) === 1 && !!nx && /^\p{Ll}/u.test(nx.text);
+};
+/** Never split inside a run of capitalised words (a name). */
+const insideName = (j: number) => capital(t.words[j]?.text ?? "") && capital(t.words[j + 1]?.text ?? "");
+// Does the transcript punctuate? Subtitles and most Whisper runs do; then full stops
+// are the sentences and nothing else splits them (pauses, capitals and the length
+// cap cut a punctuated sentence in half: "… sân bay | Nội Bài …").
+const keptAll = t.words.filter((w) => !removed.has(w.i));
+const punctuated = keptAll.filter((w) => endsSentence(w.text)).length >= Math.max(2, keptAll.length * 0.03);
 const sentenceRanges = (from: number, to: number): [number, number][] => {
   const out: [number, number][] = [];
+  // decide boundaries on the words that stay: a cut word's pause or capital says nothing
+  const K = t.words.slice(from, to + 1).filter((w) => !removed.has(w.i));
+  if (!K.length) return [];
   let a = from;
-  for (let i = from; i <= to; i++) {
-    if (endsSentence(t.words[i].text) || i === to) {
-      out.push([a, i]);
-      a = i + 1;
+  let n0 = 0; // index in K where the open line starts
+  const close = (p: number) => {
+    const end = p + 1 < K.length ? K[p + 1].i - 1 : to;
+    out.push([a, end]);
+    a = end + 1;
+    n0 = p + 1;
+  };
+  for (let p = 0; p < K.length; p++) {
+    const w = K[p];
+    const nx = K[p + 1];
+    if (!nx) {
+      close(p);
+      break;
+    }
+    const len = p - n0 + 1;
+    // a cut word can carry the full stop ("anh em [ạ.] Cập nhật …"): the boundary stays
+    const cutBetween = t.words.slice(w.i + 1, nx.i);
+    const stopInCut = cutBetween.some((x) => endsSentence(x.text) || x.turn);
+    if (endsSentence(w.text) || stopInCut || nx.turn || nx.clip !== w.clip) {
+      close(p);
+      continue;
+    }
+    const gap = nx.start - w.end;
+    const tooLong = len >= (punctuated ? LINE_MAX_WORDS * 2 : LINE_MAX_WORDS);
+    if (!punctuated && (gap >= LINE_PAUSE || (len >= 2 && opensSentence(nx.i)))) close(p);
+    else if (tooLong) {
+      // Too long with no boundary: cut at the longest pause in its second half, so
+      // neither part is a scrap, never inside a name; no pause there at all → cut here.
+      const gapAfter = (q: number) => K[q + 1].start - K[q].end;
+      let best = -1;
+      for (let q = n0 + Math.floor(len / 2); q < p; q++) if (!insideName(K[q].i) && gapAfter(q) >= 0.1 && (best < 0 || gapAfter(q) > gapAfter(best))) best = q;
+      let q = best >= 0 ? best : p;
+      while (insideName(K[q].i) && q > n0) q--;
+      close(q);
+      p = q;
     }
   }
-  return out.filter(([x, y]) => keptText(t, removed, x, y));
+  if (a <= to && out.length && out[out.length - 1][1] < to) out[out.length - 1][1] = to;
+  // Scraps of one or two words (slow speech, pauses mid-sentence) join the next line,
+  // unless they end a sentence or the next line is in another clip.
+  const merged: [number, number][] = [];
+  for (const r of out) {
+    const last = merged[merged.length - 1];
+    const short = last && (last[1] - last[0] + 1 <= 2 || r[1] - r[0] + 1 <= 2);
+    if (last && short && !endsSentence(t.words[last[1]].text) && !t.words[r[0]].turn && t.words[last[1]].clip === t.words[r[0]].clip && t.words[r[0]].start - t.words[last[1]].end < 1.5) last[1] = r[1];
+    else merged.push([...r]);
+  }
+  return merged.filter(([x, y]) => keptText(t, removed, x, y));
 };
 
 let scenes: NarrationScene[];
@@ -358,13 +465,30 @@ const voice: Voice = {
 };
 await writeVoice(join(videoDir(id), "voice.json"), voice);
 
-const footage: Footage = {transcript: t.hash, cuts: cutsHash(cuts), video: withVideo ? `footage/${id}/cut.mp4` : "", audio: voice.audio!, duration: Math.round(out * 1000) / 1000, joins};
+// which clip plays from when, in output time (for per-clip face bands)
+const clipTimeline: {at: number; clip: number}[] = [];
+for (const pc of placed) {
+  const c = clipAt(clips, pc.start);
+  if (clipTimeline[clipTimeline.length - 1]?.clip !== c) clipTimeline.push({at: Math.round(pc.out * 1000) / 1000, clip: c});
+}
+const footage: Footage = {
+  transcript: t.hash,
+  cuts: cutsHash(cuts),
+  video: withVideo ? `footage/${id}/cut.mp4` : "",
+  audio: voice.audio!,
+  duration: Math.round(out * 1000) / 1000,
+  joins,
+  ...(clips.length > 1 ? {clips: clipTimeline} : {}),
+};
 await Bun.write(footagePath(id), `${JSON.stringify(footage, null, 2)}\n`);
 
 console.log(`+ public/audio/${id}/voice.mp3${withVideo ? `, public/footage/${id}/cut.mp4` : ""}  ${out.toFixed(2)} s`);
 console.log(`+ src/videos/${id}/voice.json, footage.json, narration.json  ${vlines.length} lines, ${voice.scenes.length} scenes`);
 for (const x of notes) console.log(`  ${x}`);
-const loud = joins.filter((j) => j.db > T.footageJoinMaxDb);
+const loud = joins.filter((j) => j.kind !== "clip" && j.db > T.footageJoinMaxDb);
+const loudClip = joins.filter((j) => j.kind === "clip" && j.db > T.footageJoinMaxDb);
+if (loudClip.length) console.log(`  ! ${loudClip.length} clip join(s) start or end mid-sound at ${loudClip.map((j) => `${j.at.toFixed(2)} s`).join(", ")}: the clip itself was cut there while someone spoke; listen, and cut the clipped words if any`);
+if (clips.length > 1) console.log(`  ${clips.length} clips: ${clipTimeline.map((c) => `clip ${c.clip + 1} from ${c.at.toFixed(1)} s`).join(", ")}${clipTimeline.length < clips.length ? ` (${clips.length - clipTimeline.length} cut entirely)` : ""}`);
 if (loud.length) console.log(`  ! ${loud.length} join(s) louder than ${T.footageJoinMaxDb} dB (a cut through a syllable?) at ${loud.map((j) => `${j.at.toFixed(2)} s`).join(", ")}: listen there, widen or move the cut`);
 const sbHint = storyboardHint(id, flat.map((l) => l.display));
 if (sbHint) console.log(sbHint);

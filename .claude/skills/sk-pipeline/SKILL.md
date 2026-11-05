@@ -1,6 +1,6 @@
 ---
 name: sk-pipeline
-description: Orchestrates one narrated vertical short (TikTok, YouTube Shorts, Reels) from idea to upload-ready hand-off files, in the fixed order idea, facts, flow and visual choice, brief, narration, TTS, lint, scenes, still review, render, cover, normalize, encode, hand-off. Use when the user says "make a video about X", "start a new short", "take this idea to a finished video", "what's the next step", "where was I on this video", or asks how the whole pipeline fits together. Points at the skill and the SOUL section that governs each step.
+description: Orchestrates one narrated vertical short (TikTok, YouTube Shorts, Reels) from idea to upload-ready hand-off files, in the fixed order idea, facts, flow and visual choice, brief, narration, TTS, lint, scenes, still review, render, cover, normalize, encode, hand-off. Use when the user says "make a video about X", "start a new short", "take this idea to a finished video", "what's the next step", "where was I on this video", or asks how the whole pipeline fits together. Also when the user gives a video or audio file (or a folder of clips) to edit: "edit this video", "dựng video này", a .mov/.mp4 path. Points at the skill and the SOUL section that governs each step.
 ---
 
 # sk-pipeline: one video, idea to hand-off
@@ -42,8 +42,9 @@ Exact commands per step are in `docs/making-a-video.md`.
 
 ### A recorded voice instead of TTS (§5j)
 
-When the user brings a recording (a filmed take, or a voice-only audio file), the voice
-is what was said, not written. Steps 5 and 6 become **ingest** and **cut**; the rest
+When the user brings a recording (a filmed take, several clips, or a voice-only audio
+file), the voice is what was said, not written. Start with `bun run from <file|dir>...`:
+it does steps 3, 5a and 5b below in one go and prints what to ask the speaker. Steps 5 and 6 become **ingest** and **cut**; the rest
 keeps its order:
 
 | # | Step | Command | Evidence |

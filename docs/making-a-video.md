@@ -25,6 +25,7 @@ from the absence of an error. Three silent-failure shapes that really happened:
 | `bun run new <id> --flow <X>` | scaffold `src/videos/<id>/` from `_template`, `narration.json` with the flow and its beats |
 | `bun run dev <id>` | Remotion Studio on that video |
 | `bun run tts <id> [--force]` | synthesise the whole script → `public/audio/<id>/voice.mp3` + `src/videos/<id>/voice.json` |
+| `bun run from <file\|dir>... [--id] [--lang auto]` | recorded voice in one go: scaffold, ingest every clip, cut, storyboard stub, then what to ask the speaker |
 | `bun run ingest <id> <file> [--lang vi] [--prompt "…"]` | recorded voice (§5j): normalise a take or a recording, Whisper transcript, proposed cuts |
 | `bun run cut <id> [--propose --force]` | apply `cuts.json` → `public/audio/<id>/voice.mp3` (same place as TTS; + `public/footage/<id>/cut.mp4` for talking-head), `voice.json`, lines in `narration.json` |
 | `bun run lint <id>` | machine checks from `thresholds.json` + narration + facts |
@@ -117,6 +118,7 @@ screen (`--visual talking-head`) or a voice-only recording under an ordinary vis
 (`--voice recorded`). Rules: [`docs/visuals/talking-head.md`](visuals/talking-head.md) (§5j).
 
 ```bash
+bun run from ~/Movies/take.mov                               # all of the below in one go (several clips or a folder too)
 bun run new <id> --flow <X> --visual talking-head            # or: --visual text-as-image --voice recorded
 bun run ingest <id> ~/Movies/take.mov --lang vi --prompt "names said"
 # read the review; edit src/videos/<id>/cuts.json; fix misheard words with "spelling"

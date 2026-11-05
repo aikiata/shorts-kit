@@ -9,6 +9,15 @@ The voice comes from the footage, not from TTS: `bun run ingest` transcribes the
 `bun run cut` removes fillers, stutters, retakes and long silences, and writes `voice.json` from what is left.
 Everything after that (lint, storyboard, scenes, render) is the normal pipeline.
 
+The short way, for "here is my video, edit it":
+
+```bash
+bun run from ~/Movies/take.mov            # or several clips, or a folder of them
+```
+
+It scaffolds the video, ingests, applies the proposed cut, writes the storyboard stub, and prints
+the places only the speaker can answer and the contact sheets to measure the face on. The long way:
+
 ```bash
 bun run new <id> --flow <X> --visual talking-head
 bun run ingest <id> ~/Movies/take.mov --lang vi --prompt "names, terms said in the take"
@@ -55,6 +64,69 @@ bun run lint <id>
 9. **End on the turn, not a call to action** (§1). A take that ends "follow for more" is cut before it;
    lint warns on the phrases in `footageCtaPhrases`.
 
+## Picture-in-picture: the speaker in the corner, the story behind
+
+When the take cannot show what is said (a route, a score, a year, a map), the speaker
+shrinks into a corner and the kit's own visuals fill the frame behind, for exactly the
+words they illustrate:
+
+```tsx
+<PipShot src={footage.video} sceneFrom={p.from} at={cue(p.words, "Với", "thời")} until={cue(p.words, "Tôi", "xuất")}
+         face={narration.face} clips={footage.clips} shape="circle" width={300}>
+  <Route />   {/* a Globe, a SatelliteMap, a number card, an illustrated scene */}
+</PipShot>
+```
+
+- **One move, not a cut**: the box grows out of the full frame and back into it (`morph`).
+- **Lips stay in sync**: the box plays the same moment of `cut.mp4`, cropped around the face
+  (`face.cx` sets the face's horizontal centre when it is off-centre).
+- `shape`: `"card"` (rounded 3:4) or `"circle"`; `corner`: `"top-right"` or `"top-left"`, inside
+  the safe area. Put the content's text below the box.
+- Lint does not check effects inside a PipShot (or a wrapper that renders one) against the face
+  band: the face is in the box.
+- The rules of the content's own visual type still apply (`globe.md`: zoom no closer than
+  country scale, the texture blurs past it).
+
+## Bringing your own transcript (`--subs`)
+
+If the words already exist as text, use them instead of Whisper: `bun run from take.mov --subs
+take.srt` (or `ingest … --subs`). It reads YouTube captions (`.json3` with per-word times, `.vtt`),
+an `.srt` exported from an editor, or the script that was read. Times are trimmed to the voiced audio
+as usual; `>>` speaker changes (YouTube marks a second voice, such as a phone answering) always start
+a new line.
+
+On the 3-minute test take, YouTube's own captions were far better than Whisper: punctuation, real
+names ("Nội Bài", "Ba Đình"), and the phone assistant's spoken answer, where Whisper had invented
+"Hãy subscribe cho kênh Ghiền Mì Gõ" and dropped 16 s of speech. Machine captions are still
+machine-heard: numbers and names still go to the speaker. Only for a recording you own; the kit
+never downloads someone else's video for a channel.
+
+**Lines follow the punctuation** when the transcript has it (subtitles, most Whisper runs). Without
+full stops (Whisper on fast Vietnamese often writes none), a line also ends at a pause of 0.6 s, a
+capitalised common word (`Thì`, `Tức là`; never a name such as `Siri` or `Sài Gòn`, see
+`sentenceOpeners`), a speaker change, or at `maxWordsPerSentence`. A full stop carried by a cut word
+(`anh em [ạ.]`) still ends the line.
+
+## Several clips
+
+A video filmed as several files (`bun run from a.mov b.mov c.mov`, or a folder: sorted by filming
+time, then name) is one video of several **clips**:
+
+- **Each clip is transcribed on its own** and the words are placed on the joined timeline. A
+  single Whisper run over all of them collapsed into "à à à …" on the first test (a clip said
+  twice); per clip it heard words.
+- **A clip boundary is always a join** (`kind: "clip"`): `cut` trims the dead air at the end of
+  one clip and the start of the next, never shortens a silence across it, and lint does not treat
+  it as a cut through a syllable. The punch-in framing restarts at 1.00 on every clip.
+- **A clip said again in a later clip** is proposed as a `retake` of the whole clip
+  (`footageClipRetakeShare` of its three-word runs said again), and the later one is kept.
+- **One face band per clip**: `"face": [{top, bottom}, …]`, in play order, each measured on its
+  contact sheet (`.cache/footage/<id>/clip-NN-sheet.jpg`, ruler lines every 100 px). Lint checks
+  each effect against the clips on screen during its scene; write `scenes` as an object literal
+  (`{hook: Hook, …}`) so lint can tell which scene an effect is in, otherwise it checks every band.
+- Clips filmed at different levels or in different rooms are reported by `ingest`: the change is
+  heard at the join even after `normalize`.
+
 ## Voice only
 
 Without `talking-head` in `visual` the same commands use only the recording's audio, and the video is
@@ -74,6 +146,10 @@ face band does not. The source record may be kind `voice`.
 - **Whisper's word edges are 100–300 ms off** and its segments touch end to end, hiding pauses. `ingest`
   trims each word to its voiced audio, and `cut` places every cut inside a measured quiet run, never at a
   word edge. A first version cut at word edges and clipped a syllable at −19 dB; lint caught it.
+- **Whisper loops and invents.** On short clips it can repeat one word ("ừ ừ ừ …"): `ingest`
+  retries at a higher temperature and stops if it still loops. Padding a clip with silence made it
+  write "Hãy subscribe cho kênh …", which nobody said; phrases like that (`whisperHallucinations`)
+  are marked unsure so the speaker confirms them.
 - **Marks do not follow a moving hand.** A `CircleMark` placed on the phone at 6 s circled a shirt at
   10 s. On footage, draw a mark only for the moment the thing holds still, and check stills at the
   start, middle and end of the mark.
@@ -100,6 +176,8 @@ face band does not. The source record may be kind `voice`.
 
 | Video | Date | What it taught |
 | --- | --- | --- |
+| a 3-minute downloaded short (test only) | 2026-11-05 | the phone screen is the demo, so overlays had nowhere to go: picture-in-picture for the numbers and the route; a globe past country scale blurs |
+| four clips cut from the first take (test) | 2026-11-05 | one Whisper run over joined clips looped; per clip it worked; a re-taken clip was found and cut; a closer clip needed its own face band |
 | first take (test, not posted) | 2026-11-05 | face band at 440–880 px, not the lower half; Whisper misheard and dropped words; word edges unusable as cut points; marks do not track |
 
 ## Change log

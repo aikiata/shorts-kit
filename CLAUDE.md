@@ -37,7 +37,8 @@ Open only the `docs/soul/` file for the step you are on. Exact commands per step
 bun run new <id> --flow <A..T>   # scaffold src/videos/<id>/
 bun run dev <id>                 # Remotion Studio
 bun run tts <id> [--force]       # voice.mp3 + voice.json
-bun run ingest <id> <file>       # recorded voice: Whisper transcript + proposed cuts (§5j)
+bun run from <file|dir>...       # "edit my video": new + ingest (every clip) + cut + storyboard stub
+bun run ingest <id> <file>...    # recorded voice: Whisper transcript + proposed cuts (§5j)
 bun run cut <id>                 # apply cuts.json: voice.mp3 (+ cut.mp4), voice.json
 bun run lint <id>                # checks from docs/soul/thresholds.json
 bun run storyboard <id> [--init|--sync] # shot list after the voice; --sync after tts/cut

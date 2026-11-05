@@ -68,5 +68,6 @@ one follows a §5 rule in code; read the rule before using it.
 | `chart/ProgressRing` | one share of one whole | one ring per whole |
 | `chart/UnitGrid` | a ratio as counted things ("1 in 8") | `total` small enough to count (≤ 100) |
 | `chart/Odometer` | a year or counter rolling from A to B | the roll shows how far the number travels |
+| `frame/PipShot` | talking-head: the speaker in a corner box (card or circle), a globe, map or card behind | only for the words it illustrates; content text below the box |
 
 Cue every `at` from a word of the narration (`frameAtWord`, docs/sfx.md), never a typed frame number.

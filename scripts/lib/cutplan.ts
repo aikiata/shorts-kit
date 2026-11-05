@@ -14,6 +14,10 @@ export type PlanOptions = {
   retakeWindow: number;
   /** Words below this confidence are flagged in the review (never cut automatically). */
   lowConfidence: number;
+  /** A clip whose word triples are mostly (this share) said again in a later clip is a re-take. */
+  clipRetakeShare: number;
+  /** Clips shorter than this many words are never called a re-take (too little to compare). */
+  clipRetakeMinWords: number;
 };
 
 export const proposeCuts = (t: Transcript, o: PlanOptions): Cuts => {
@@ -49,6 +53,30 @@ export const proposeCuts = (t: Transcript, o: PlanOptions): Cuts => {
     if (b[i] && b[i] === b[i + 1] && !fill.has(b[i]) && !endsSentence(w[i].text)) cuts.push({from: i, to: i, reason: "false-start", note: "repeated word"});
   }
 
+  // 4. a whole clip said again in a later clip (a re-take filmed as a new file): keep the later one
+  const byClip = new Map<number, number[]>();
+  w.forEach((x, i) => {
+    if (x.clip !== undefined) byClip.set(x.clip, [...(byClip.get(x.clip) ?? []), i]);
+  });
+  const gramsOf = (idx: number[]) => {
+    const g = new Set<string>();
+    for (let k = 0; k + G <= idx.length; k++) g.add(idx.slice(k, k + G).map((i) => b[i]).join(" "));
+    return g;
+  };
+  const clipIds = [...byClip.keys()].sort((x, y) => x - y);
+  for (const ci of clipIds) {
+    const idx = byClip.get(ci)!;
+    if (idx.length < o.clipRetakeMinWords) continue;
+    const mine = gramsOf(idx);
+    const later = clipIds.filter((cj) => cj > ci).reverse().find((cj) => {
+      const theirs = gramsOf(byClip.get(cj)!);
+      let hit = 0;
+      for (const g of mine) if (theirs.has(g)) hit++;
+      return mine.size > 0 && hit / mine.size >= o.clipRetakeShare;
+    });
+    if (later !== undefined) cuts.push({from: idx[0], to: idx[idx.length - 1], reason: "retake", note: `clip ${ci + 1} is said again in clip ${later + 1}`});
+  }
+
   return {transcript: t.hash, maxGap: o.maxGap, pad: o.pad, cuts: mergeCuts(cuts)};
 };
 
@@ -81,6 +109,7 @@ export const reviewText = (t: Transcript, c: Cuts, lowConfidence: number) => {
   t.words.forEach((w, i) => {
     if (!line) first = i;
     const prev = t.words[i - 1];
+    if (w.clip !== undefined && w.clip !== prev?.clip) line += ` ▶clip ${w.clip + 1}`;
     if (prev && w.start - prev.end > c.maxGap) line += ` ⟨${(w.start - prev.end).toFixed(1)}s⟩`;
     const start = reasonAt.get(i);
     if (start) {

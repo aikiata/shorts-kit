@@ -177,8 +177,8 @@ Already have a recording? Say:
 
 > make a video from ~/Movies/take.mov
 
-The agent scaffolds a `talking-head` video (or a voice-only one, for an audio file), runs
-`ingest` and `cut`, and asks you what you actually said wherever Whisper was unsure. Expect
+The agent runs `bun run from` (a `talking-head` video, or a voice-only one for an audio file;
+several clips or a folder work too), and asks you what you actually said wherever Whisper was unsure. Expect
 that: on a real take it misheard a phrase as a number and dropped whole words.
 
 ## Commands
@@ -188,6 +188,7 @@ that: on a real take it misheard a phrase as a number and dropped whole words.
 | `bun run new <id> --flow <A..T>` | scaffold `src/videos/<id>/` from a flow's beats |
 | `bun run dev <id>` | Remotion Studio for that video |
 | `bun run tts <id> [--force]` | synthesise the whole script, write the audio and `voice.json` |
+| `bun run from <file\|dir>...` | "here is my video, edit it": scaffold, transcribe every clip, cut, storyboard stub, and the questions only the speaker can answer |
 | `bun run ingest <id> <file>` | recorded voice instead of TTS (a filmed take or a voice recording): Whisper transcript and proposed cuts |
 | `bun run cut <id>` | apply the reviewed `cuts.json`: the voice track (and the cut video for `talking-head`), `voice.json` |
 | `bun run storyboard <id> [--init\|--sync]` | the shot list after the voice: scaffold it, print each shot with its time and what to fix; `--sync` re-pins shots to their lines after the words change |

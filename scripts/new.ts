@@ -16,7 +16,7 @@ import {writeVoice} from "./lib/narration";
 
 /** Video.tsx for a filmed video: the footage is the background, its audio the voice. */
 const FOOTAGE_VIDEO = `import React from "react";
-import {FootageStage, type FaceBand, type FootageJoin} from "../../shared/frame/FootageStage";
+import {FootageStage, type ClipStart, type FaceBands, type FootageJoin} from "../../shared/frame/FootageStage";
 import {ShortsTemplate} from "../../shared/frame/ShortsTemplate";
 import {DEFAULT_PALETTE} from "../../shared/theme";
 import footage from "./footage.json";
@@ -36,7 +36,7 @@ export const Video: React.FC<{safe: boolean}> = ({safe}) => (
     scenes={scenes}
     palette={DEFAULT_PALETTE}
     safe={safe}
-    background={<FootageStage src={footage.video} duration={footage.duration} joins={footage.joins as FootageJoin[]} face={(narration as {face?: FaceBand}).face} />}
+    background={<FootageStage src={footage.video} duration={footage.duration} joins={footage.joins as FootageJoin[]} face={(narration as {face?: FaceBands}).face} clips={(footage as {clips?: ClipStart[]}).clips} />}
   />
 );
 `;

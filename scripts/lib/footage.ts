@@ -37,7 +37,14 @@ export type TWord = {
   p: number;
   /** Spans a long voiced stretch: Whisper likely dropped words here. Never trimmed. */
   suspect?: boolean;
+  /** Index into transcript.source.clips: which filmed clip the word was said in. */
+  clip?: number;
+  /** A different voice starts here (subtitles' ">>"): always a line break. */
+  turn?: boolean;
 };
+
+/** One input file, in the order it plays. Times are in the joined source. */
+export type Clip = {file: string; start: number; end: number; width: number; height: number; created?: string};
 
 export type Transcript = {
   /** Hash of the normalised source file: a new take is a new transcript. */
@@ -45,8 +52,8 @@ export type Transcript = {
   model: string;
   language: string;
   prompt?: string;
-  /** width/height are 0 for a voice-only source. */
-  source: {file: string; duration: number; width: number; height: number};
+  /** width/height are 0 for a voice-only source. `clips`: the input files, joined in this order. */
+  source: {file: string; duration: number; width: number; height: number; clips?: Clip[]};
   words: TWord[];
 };
 
@@ -81,8 +88,8 @@ export type Join = {
   at: number;
   /** Loudness at the source cut points, dBFS (quiet = clean cut). */
   db: number;
-  /** "cut" removes words; "gap" only shortens a silence. */
-  kind: "cut" | "gap";
+  /** "cut" removes words; "gap" only shortens a silence; "clip" is the change to the next filmed clip. */
+  kind: "cut" | "gap" | "clip";
 };
 
 export type Footage = {
@@ -93,6 +100,8 @@ export type Footage = {
   audio: string;
   duration: number;
   joins: Join[];
+  /** Output time each clip starts playing (a clip cut entirely is absent). */
+  clips?: {at: number; clip: number}[];
 };
 
 export const transcriptPath = (id: string) => join(videoDir(id), "transcript.json");
@@ -120,6 +129,39 @@ export const suspectKept = (w: TWord, stretches: Stretch[] = []) => {
   let covered = 0;
   for (const s of stretches) covered += Math.max(0, Math.min(s.end, w.end) - Math.max(s.start, w.start));
   return Math.max(0, w.end - w.start - covered);
+};
+
+/** The clips of a transcript; a single-file transcript is one clip. */
+export const clipsOf = (t: Transcript): Clip[] =>
+  t.source.clips?.length ? t.source.clips : [{file: t.source.file, start: 0, end: t.source.duration, width: t.source.width, height: t.source.height}];
+
+/** Which clip a source time falls in. */
+export const clipAt = (clips: Clip[], at: number) => {
+  for (let i = clips.length - 1; i >= 0; i--) if (at >= clips[i].start - 1e-6) return i;
+  return 0;
+};
+
+const MEDIA_RE = /\.(mov|mp4|m4v|mkv|webm|avi|mp3|wav|m4a|aac|flac|ogg|opus)$/i;
+
+/**
+ * Input paths → files in play order. A directory expands to its media files
+ * sorted by when they were filmed (creation_time), then by name; files given
+ * one by one keep the order given (the person chose it).
+ */
+export const expandInputs = async (paths: string[], probe: (f: string) => Promise<{format: {tags?: Record<string, string>}}>): Promise<{file: string; created?: string}[]> => {
+  const {readdirSync, statSync} = await import("node:fs");
+  const {join, resolve} = await import("node:path");
+  const out: {file: string; created?: string}[] = [];
+  for (const raw of paths) {
+    const pth = resolve(raw);
+    if (statSync(pth).isDirectory()) {
+      const files = readdirSync(pth).filter((f) => MEDIA_RE.test(f) && !f.startsWith(".")).map((f) => join(pth, f));
+      const dated = await Promise.all(files.map(async (f) => ({file: f, created: (await probe(f)).format.tags?.creation_time})));
+      dated.sort((a, b) => (a.created && b.created ? a.created.localeCompare(b.created) : 0) || a.file.localeCompare(b.file));
+      out.push(...dated);
+    } else out.push({file: pth, created: (await probe(pth)).format.tags?.creation_time});
+  }
+  return out;
 };
 
 /** Set of removed word indices. */
@@ -208,5 +250,72 @@ export const refineWords = (words: TWord[], pcm: Float32Array, rate: number, min
     const start = Math.max(w.start, first / 100 - 0.02);
     const end = Math.min(w.end, (last + 1) / 100 + 0.03);
     return {...w, start: Math.round(start * 1000) / 1000, end: Math.round(Math.max(end, start + 0.05) * 1000) / 1000};
+  });
+};
+
+/**
+ * Words from a subtitle file the person already has, instead of Whisper: YouTube's
+ * captions (.json3 with per-word times, or .vtt), an .srt exported from an editor,
+ * or a script they read. Times are rough (whole cues for .srt/.vtt); `refineWords`
+ * trims them to the voiced audio afterwards. `>>` (a speaker change) marks `turn`.
+ * Machine captions are still machine-heard: numbers and names still go to the speaker.
+ */
+export const parseSubs = (file: string, raw: string): TWord[] => {
+  type W = {text: string; start: number; end?: number; turn?: boolean};
+  const ws: W[] = [];
+  const push = (text: string, start: number, end?: number) => {
+    let turn = false;
+    let t = text.trim();
+    if (t.startsWith(">>")) {
+      turn = true;
+      t = t.replace(/^>>\s*/, "");
+    }
+    for (const [k, part] of t.split(/\s+/).filter(Boolean).entries()) ws.push({text: part, start, end, ...(turn && k === 0 ? {turn: true} : {})});
+  };
+  if (/\.json3$/i.test(file)) {
+    const d = JSON.parse(raw) as {events?: {tStartMs?: number; dDurationMs?: number; segs?: {utf8?: string; tOffsetMs?: number}[]}[]};
+    for (const ev of d.events ?? []) {
+      for (const sg of ev.segs ?? []) {
+        if (!sg.utf8?.trim()) continue;
+        push(sg.utf8, ((ev.tStartMs ?? 0) + (sg.tOffsetMs ?? 0)) / 1000, ((ev.tStartMs ?? 0) + (ev.dDurationMs ?? 0)) / 1000);
+      }
+    }
+  } else {
+    // .srt / .vtt: cue blocks "00:00:01,000 --> 00:00:03,500" then text lines
+    const time = (s: string) => {
+      const m = s.trim().match(/(?:(\d+):)?(\d+):(\d+)[.,](\d+)/);
+      return m ? Number(m[1] ?? 0) * 3600 + Number(m[2]) * 60 + Number(m[3]) + Number(`0.${m[4]}`) : NaN;
+    };
+    for (const block of raw.replace(/\r/g, "").split(/\n\s*\n/)) {
+      const lines = block.split("\n");
+      const at = lines.findIndex((l) => l.includes("-->"));
+      if (at < 0) continue;
+      const [a, b] = lines[at].split("-->").map((x) => time(x));
+      const text = lines.slice(at + 1).join(" ").replace(/<[^>]+>/g, "").trim();
+      if (!text || !(b > a)) continue;
+      // spread the cue's words over it by length; refineWords fixes the edges later
+      const parts = text.split(/\s+/);
+      const total = parts.reduce((s, x) => s + x.length + 1, 0);
+      let t = a;
+      for (const x of parts) {
+        const d = ((b - a) * (x.length + 1)) / total;
+        push(x, t, t + d);
+        t += d;
+      }
+    }
+  }
+  // vtt rolling captions repeat words: keep one per (text, start)
+  const seen = new Set<string>();
+  const uniq = ws.filter((w) => {
+    const k = `${w.text}@${w.start.toFixed(2)}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  uniq.sort((x, y) => x.start - y.start);
+  return uniq.map((w, i) => {
+    const next = uniq[i + 1]?.start;
+    const end = Math.min(w.end ?? Infinity, next ?? Infinity, w.start + 1.5);
+    return {i, text: w.text, start: w.start, end: Number.isFinite(end) && end > w.start ? end : w.start + 0.3, p: 1, ...(w.turn ? {turn: true} : {})};
   });
 };

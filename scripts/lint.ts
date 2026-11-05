@@ -286,7 +286,7 @@ if (footage) {
       if (j.db > T.footageJoinMaxDb) err(`join at ${j.at.toFixed(2)} s is ${j.db} dB, louder than ${T.footageJoinMaxDb} dB: the cut goes through a syllable. Move or widen it in cuts.json${ref("footageJoinMaxDb")}`);
     }
     for (const w of tr.words.filter((x) => x.suspect && !removed.has(x.i) && suspectKept(x, cuts.stretches) > SUSPECT_KEEP_MAX)) {
-      err(`${w.start.toFixed(1)}–${w.end.toFixed(1)} s: Whisper wrote only "${w.text}" over ${(w.end - w.start).toFixed(1)} s of speech, so the transcript is missing words there. Captions and facts would skip what was said: re-ingest with --prompt, ask the speaker and fix it, or cut the untranscribed part as a "stretches" entry (§5j)`);
+      err(`${w.start.toFixed(1)}–${w.end.toFixed(1)} s: the transcript has only "${w.text}" over ${(w.end - w.start).toFixed(1)} s of speech, so words are missing there. Captions and facts would skip what was said: re-ingest with --prompt, ask the speaker and fix it, or cut the untranscribed part as a "stretches" entry (§5j)`);
     }
     // A word a `spelling` fix already replaced was confirmed with the speaker: no longer a doubt.
     const shown = new Set(n.scenes.flatMap((s) => s.lines.flatMap((l) => words(applyMap(l.text, n.spelling)))));
@@ -331,15 +331,74 @@ if (rawNarration.visual?.includes("talking-head")) {
     const [lo, hi] = T.effectsPerMinute as [number, number];
     if (perMin < lo || perMin > hi) warn(`${effects.length} effects in ${voice.duration.toFixed(0)} s is ${perMin.toFixed(1)}/min, target ${lo}–${hi}${ref("effectsPerMinute")}`);
   }
-  const face = (rawNarration as {face?: {top: number; bottom: number}}).face;
-  if (footage && !(face && face.top >= 0 && face.bottom > face.top)) {
-    err('no "face": {top, bottom} in narration.json: measure the face band (frame px) from stills of cut.mp4, so effects never sit on it (§5j)');
-  } else if (face) {
+  type Band = {top: number; bottom: number};
+  const rawFace = (rawNarration as {face?: Band | Band[]}).face;
+  const okBand = (b?: Band) => !!b && b.top >= 0 && b.bottom > b.top;
+  const clipCount = footage ? (loadTranscript(id)?.source.clips?.length ?? 1) : 1;
+  const bands: Band[] = Array.isArray(rawFace) ? rawFace : rawFace ? [rawFace] : [];
+  if (footage && !bands.length) {
+    err('no "face": {top, bottom} in narration.json: measure the face band (frame px) on the clip contact sheets (.cache/footage/<id>/clip-*-sheet.jpg), so effects never sit on it (§5j)');
+  } else if (footage && Array.isArray(rawFace) && rawFace.length !== clipCount) {
+    err(`"face" lists ${rawFace.length} bands for ${clipCount} clips: one band per clip, in play order (§5j)`);
+  } else if (footage && !bands.every(okBand)) {
+    err('"face" has a band with bottom ≤ top or a negative top: measure it on the contact sheet (§5j)');
+  } else if (bands.length) {
     const m = T.footageFaceMarginPx as number;
-    for (const e of effects) {
-      const top = Number(e.props.match(/\btop=\{(\d+)\}/)?.[1] ?? NaN);
-      if (top >= face.top - m && top < face.bottom) err(`${e.f}: <${e.name} top={${top}}> lands on the face (band ${face.top}–${face.bottom}, margin ${m}): move it above or below${ref("footageFaceMarginPx")}`);
+    // Which bands apply to an effect: the clips on screen during its scene; unknown → all of them.
+    const built = loadFootage(id);
+    const timeline = built?.clips ?? [{at: 0, clip: 0}];
+    const bandsBetween = (a: number, b: number) => {
+      if (!Array.isArray(rawFace)) return bands;
+      const on = timeline.filter((c, k) => c.at < b && (timeline[k + 1]?.at ?? Infinity) > a).map((c) => c.clip);
+      return on.length ? on.map((c) => bands[c] ?? bands[0]) : bands;
+    };
+    const sceneSrc = existsSync(join(dir, "scenes.tsx")) ? readFileSync(join(dir, "scenes.tsx"), "utf8") : "";
+    const reg = sceneSrc.match(/export const scenes[^=]*=\s*\{([^}]*)\}/s)?.[1] ?? "";
+    const pairs = [...reg.matchAll(/([\w-]+|"[^"]+")\s*:\s*(\w+)/g)].map((x) => [x[1].replace(/"/g, ""), x[2]] as const);
+    const placed = new Set<string>();
+    // Effects inside picture-in-picture are not over the face: the face is in the box.
+    // Spans: <PipShot>…</PipShot>, wrappers whose body renders a PipShot, and the
+    // components used inside those spans (one level per pass, three passes).
+    const bodyOf = (name: string) => {
+      const m = new RegExp(`const ${name}\\b[\\s\\S]*?(?=\\nconst |\\nexport |\\n// -)`).exec(sceneSrc);
+      return m ? ([m.index, m.index + m[0].length] as [number, number]) : null;
+    };
+    const pipNames = new Set(["PipShot"]);
+    for (const m of sceneSrc.matchAll(/const (\w+)\b[^=]*=[\s\S]*?(?=\nconst |\nexport )/g)) if (/<PipShot\b/.test(m[0])) pipNames.add(m[1]);
+    const pipSpans: [number, number][] = [];
+    const spansOf = (name: string) => {
+      for (const m of sceneSrc.matchAll(new RegExp(`<${name}\\b`, "g"))) {
+        const close = sceneSrc.indexOf(`</${name}>`, m.index);
+        if (close > 0) pipSpans.push([m.index, close]);
+      }
+    };
+    for (const nm of pipNames) spansOf(nm);
+    const inPip = (at: number) => pipSpans.some(([x, y]) => at >= x && at <= y);
+    for (let pass = 0; pass < 3; pass++) {
+      for (const [x, y] of [...pipSpans]) {
+        for (const m of sceneSrc.slice(x, y).matchAll(/<([A-Z]\w*)/g)) {
+          const sp = bodyOf(m[1]);
+          if (sp && !pipSpans.some(([a2, b2]) => a2 === sp[0] && b2 === sp[1])) pipSpans.push(sp);
+        }
+      }
     }
+    for (const e of sceneSrc.matchAll(EFFECT_RE)) if (inPip(e.index ?? -1)) placed.add(`${e[1]}${e[2]}`);
+    const check = (name: string, props: string, where: string, list: Band[]) => {
+      const top = Number(props.match(/\btop=\{(\d+)\}/)?.[1] ?? NaN);
+      for (const fb of list) {
+        if (top >= fb.top - m && top < fb.bottom) return err(`${where}: <${name} top={${top}}> lands on the face (band ${fb.top}–${fb.bottom}, margin ${m}): move it above or below${ref("footageFaceMarginPx")}`);
+      }
+    };
+    for (const [sid, comp] of pairs) {
+      const body = sceneSrc.match(new RegExp(`const ${comp}\\b[\\s\\S]*?(?=\\nconst |\\nexport )`))?.[0] ?? "";
+      const sc = voice?.scenes.find((x) => x.id === sid);
+      for (const e of body.matchAll(EFFECT_RE)) {
+        if (placed.has(`${e[1]}${e[2]}`)) continue;
+        placed.add(`${e[1]}${e[2]}`);
+        check(e[1], e[2], `scenes.tsx (${sid})`, sc ? bandsBetween(sc.start, sc.end) : bands);
+      }
+    }
+    for (const e of effects) if (!placed.has(`${e.name}${e.props}`)) check(e.name, e.props, e.f, bands);
   }
 }
 

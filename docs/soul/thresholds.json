@@ -325,5 +325,25 @@
     "value": 1,
     "rule": "§5j",
     "why": "WordSlam and Stamp are the exclamation mark; a second one in the same video cancels the first"
+  },
+  "footageClipRetakeShare": {
+    "value": 0.6,
+    "rule": "§5j",
+    "why": "a filmed clip whose three-word runs are mostly said again in a later clip is a re-take of it; the later clip is kept"
+  },
+  "footageClipRetakeMinWords": {
+    "value": 6,
+    "rule": "§5j",
+    "why": "below this many words two clips share too few runs to call one a re-take of the other"
+  },
+  "whisperHallucinations": {
+    "value": {"vi": ["ghiền mì gõ", "hãy subscribe cho kênh", "đừng quên đăng ký kênh", "cảm ơn các bạn đã theo dõi", "hẹn gặp lại các bạn trong những video tiếp theo"], "en": ["thanks for watching", "thank you for watching", "please subscribe", "subscribe to my channel", "like and subscribe"]},
+    "rule": "§5j",
+    "why": "phrases Whisper invents over silence or noise; on the first multi-clip test it wrote 'Hãy subscribe cho kênh Ghiền Mì Gõ' over a clip that never said it. Words in them are marked unsure so the speaker confirms them"
+  },
+  "sentenceOpeners": {
+    "value": {"vi": ["và", "thì", "nhưng", "nhưng mà", "nếu", "tức", "tuy", "còn", "mà", "hoặc", "cũng", "đó", "đây", "vậy", "hãy", "nhớ", "đừng", "sau", "trước", "khi", "bởi", "vì", "nói", "không"], "en": ["and", "but", "so", "then", "if", "because", "now", "this", "that", "so,"]},
+    "rule": "§5j",
+    "why": "a transcript with no full stops is split into lines at these words when capitalised, even right after a name (\"Sài Gòn Thì …\"); names never are"
   }
 }
