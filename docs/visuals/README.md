@@ -48,3 +48,23 @@ the others (Use when / Rules / Traps / Change log), a line in the table above an
 §5's index. Build a **probe still** of the new type before anyone writes a script
 around it: every lesson in these files came from the first render, not from reasoning.
 Never rename an id once a video declares it.
+
+## Shared graphics (any visual type)
+
+Pieces that sit on top of any visual type. Browse them with `bun run dev gallery`. Each
+one follows a §5 rule in code; read the rule before using it.
+
+| Component | For | Rule it carries |
+| --- | --- | --- |
+| `caption/StrikeReplace` | the turn: the belief struck, the fact in its place | both words are claims; both need records (§9) |
+| `caption/SlotWord` | "which one was it?": decoys spin, the answer lands | the answer is the **last** entry |
+| `caption/WordSlam` | the one punch word, with `boom` | once per video; a slam every scene is a metronome |
+| `caption/Typewriter` | words that exist: a quote, a law, a telegram | `source` is required (no fake documents) |
+| `marks/CircleMark`, `ArrowMark`, `Underline` | pointing at the exact spot on the subject | drawn **onto** the subject, never on empty frame |
+| `marks/CrossOut`, `Stamp` | a verdict: wrong, myth, confirmed | only a verdict a verified record supports |
+| `chart/CompareBars` | two to five quantities side by side | true to scale from zero; else `notToScale` on frame |
+| `chart/ProgressRing` | one share of one whole | one ring per whole |
+| `chart/UnitGrid` | a ratio as counted things ("1 in 8") | `total` small enough to count (≤ 100) |
+| `chart/Odometer` | a year or counter rolling from A to B | the roll shows how far the number travels |
+
+Cue every `at` from a word of the narration (`frameAtWord`, docs/sfx.md), never a typed frame number.

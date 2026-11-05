@@ -3,6 +3,7 @@ import {AbsoluteFill, Sequence} from "remotion";
 import {Label} from "./Label";
 import {MAP_SHOTS} from "./map-shots";
 import {GLOBE_SHOTS} from "./globe-shots";
+import {GRAPHIC_SHOTS} from "./graphic-shots";
 import {BirdsClouds, CameraPush, CampDusk, DaySea, DuskSun, FigureGait, FigureRest, FishSchool, GrainVignette, NightMoon, PersonPoses, Prairie, SHOT_FRAMES, StormRain} from "./shots";
 
 /** Each entry: the shot, the import path it demonstrates, and a one-line note. */
@@ -20,7 +21,7 @@ export const SHOTS: {Shot: React.FC; path: string; note: string; frames?: number
   {Shot: FigureGait, path: "shared/figures/Figure: gait", note: "walk, run, slump, crouch; speed plants the feet"},
   {Shot: FigureRest, path: "shared/figures/Figure: rest", note: 'seat="crate|log|stool", ground, kneel, lie'},
   {Shot: CampDusk, path: "shared/props: Wagon, Cannon, Bridge", note: 'sky="dusk" marsh, grade={GRADES.dusk} rim'},
-  ...[...MAP_SHOTS, ...GLOBE_SHOTS].map((x) => ({Shot: x.Component, path: x.label, note: x.note, frames: x.frames})),
+  ...[...GRAPHIC_SHOTS, ...MAP_SHOTS, ...GLOBE_SHOTS].map((x) => ({Shot: x.Component, path: x.label, note: x.note, frames: x.frames})),
 ];
 
 /** Where each shot starts: shots keep their own length (map and globe moves need more than 3 s). */
