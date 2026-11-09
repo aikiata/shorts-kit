@@ -13,7 +13,8 @@ import {join} from "node:path";
 import {FPS} from "../src/shared/theme";
 import type {Voice} from "../src/shared/timings";
 import {loadNarration, voiceHash} from "./lib/narration";
-import {die, ensureDir, flag, outDir, p, videoDir} from "./lib/paths";
+import {die, ensureDir, flag, isVoiceless, outDir, p, videoDir} from "./lib/paths";
+import {promoSeconds, type Promo} from "../src/shared/promo";
 import {duration, must, run} from "./lib/proc";
 
 const [mode, id] = process.argv.slice(2).filter((a) => !a.startsWith("-"));
@@ -79,10 +80,16 @@ if (mode === "render") {
   await remotion(["render", relEntry, "Video", file, "--codec=h264", `--props=${props}`], 90 * MIN);
   mustExist(file, started);
   const got = await duration(file);
-  const n = loadNarration(id);
-  const want = voice ? Math.ceil((voice.duration + n.outroHold) * FPS) / FPS : NaN;
-  console.log(`+ out/${id}/${id}.mp4  ${got.toFixed(2)} s${voice ? ` (voice ${voice.duration.toFixed(2)} s + hold ${n.outroHold} s ≈ ${want.toFixed(2)} s)` : ""}`);
-  if (voice && Math.abs(got - want) > 0.25) console.warn(`! duration differs from voice + outro hold by ${(got - want).toFixed(2)} s`);
+  if (isVoiceless(id)) {
+    const want = promoSeconds(JSON.parse(readFileSync(join(videoDir(id), "promo.json"), "utf8")) as Promo);
+    console.log(`+ out/${id}/${id}.mp4  ${got.toFixed(2)} s (promo.json ≈ ${want.toFixed(2)} s)`);
+    if (Math.abs(got - want) > 0.25) console.warn(`! duration differs from promo.json by ${(got - want).toFixed(2)} s`);
+  } else {
+    const n = loadNarration(id);
+    const want = voice ? Math.ceil((voice.duration + n.outroHold) * FPS) / FPS : NaN;
+    console.log(`+ out/${id}/${id}.mp4  ${got.toFixed(2)} s${voice ? ` (voice ${voice.duration.toFixed(2)} s + hold ${n.outroHold} s ≈ ${want.toFixed(2)} s)` : ""}`);
+    if (voice && Math.abs(got - want) > 0.25) console.warn(`! duration differs from voice + outro hold by ${(got - want).toFixed(2)} s`);
+  }
   console.log(`  Next: pull frames from the mp4 and look, then \`bun run normalize ${id}\`.`);
 }
 

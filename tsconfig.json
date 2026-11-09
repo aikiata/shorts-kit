@@ -11,7 +11,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "types": ["bun", "react"]
+    "types": ["bun", "react"],
+    "paths": {
+      "@kn/*": ["./scripts/preview/kn/*"]
+    }
   },
-  "include": ["src", "scripts", "remotion.config.ts"]
+  "include": ["src", "scripts", "remotion.config.ts"],
+  "exclude": ["src/demo"]
 }

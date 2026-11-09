@@ -7,6 +7,14 @@ description: Orchestrates one narrated vertical short (TikTok, YouTube Shorts, R
 
 **Announce:** "Using sk-pipeline for <id>."
 
+## Route first: short or promo?
+
+This skill is for narrated knowledge shorts. If the user wants an **ad, TVC,
+commercial, product or launch video, teaser, or any landscape (16:9) video**, use
+`sk-promo` instead; it has its own rules (`docs/promo/README.md`). A short can still be
+scaffolded with `--format landscape`, but then say plainly that SOUL's rules were
+written for 9:16 and that components not yet format-aware may misplace content.
+
 ## This skill is not the rules
 
 The rules live in `SOUL.md` and `docs/soul/`. This skill only fixes the **order**
@@ -32,7 +40,7 @@ Exact commands per step are in `docs/making-a-video.md`.
 | 6 | TTS | `sk-narration` | §4 | `voice.json` + `public/audio/<id>/voice.mp3`, listened to |
 | 7 | Lint | `sk-narration` | `docs/soul/thresholds.json` | `bun run lint <id>` 0 errors, warnings read |
 | 7b | Storyboard: one row per camera shot, approved by the user before any scene code | `sk-scene` | §12, `docs/storyboard.md` | `bun run storyboard <id>` clean, shots `approved` |
-| 8 | Scenes (+ optional SFX, `docs/sfx.md`) | `sk-scene` | §5, §6, §7, §8, §12, §13 | `bun run check` clean |
+| 8 | Scenes (+ optional SFX, `docs/shots/sfx/`) | `sk-scene` | §5, §6, §7, §8, §12, §13 | `bun run check` clean |
 | 9 | Still review | `sk-scene` | §7 | stills in `out/<id>/` opened and looked at |
 | 10 | Render | `sk-render` | §11 | `out/<id>/<id>.mp4`, frames checked |
 | 11 | Cover | `sk-handoff` | §10 | `out/<id>/<id>-cover.png` checked at 200 px |

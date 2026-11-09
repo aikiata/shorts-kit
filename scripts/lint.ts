@@ -14,12 +14,14 @@ import {ENGINES} from "./lib/engines";
 import {loadLedger, type Fact, type Source} from "./lib/facts";
 import {cutsHash, FOOTAGE_ENGINE, keptText, loadCuts, loadFootage, loadTranscript, removedSet, SUSPECT_KEEP_MAX, suspectKept} from "./lib/footage";
 import {flatLines, loadNarration, voiceHash, type Narration} from "./lib/narration";
-import {p, videoArg, videoDir} from "./lib/paths";
+import {isVoiceless, p, videoArg, videoDir} from "./lib/paths";
+import {lintPromo} from "./lint-promo";
 import {checkStoryboard, loadStoryboard} from "./lib/storyboard";
 import {loadThresholds, ruleOf} from "./lib/thresholds";
 import {applyMap, phraseRe, sentences, wordCount, words} from "./lib/text";
 
 const id = videoArg("bun run lint <id>");
+if (isVoiceless(id)) process.exit(lintPromo(id));
 const T = loadThresholds();
 const dir = videoDir(id);
 const rawNarration = JSON.parse(readFileSync(join(dir, "narration.json"), "utf8")) as Partial<Narration>;
@@ -427,7 +429,7 @@ if (!existsSync(p("briefs", `${id}.md`))) warn(`no briefs/${id}.md: the brief ho
     if (voice && !voice.estimated) warn(`no storyboard yet: plan the shots before building scenes (bun run storyboard ${id} --init, docs/storyboard.md)`);
   } else {
     for (const i of checkStoryboard(sb.value, lines.map((l) => l.display), voice ?? null, visualIds)) (i.level === "error" ? err : warn)(`storyboard: ${i.message}`);
-    const todo = sb.value.shots.filter((x) => /TODO/.test(`${x.camera} ${x.onScreen}`)).length;
+    const todo = sb.value.shots.filter((x) => /TODO/.test(`${x.size ?? ""} ${x.camera} ${x.onScreen}`)).length;
     if (todo) warn(`storyboard: ${todo} shot${todo > 1 ? "s" : ""} still TODO`);
   }
 }

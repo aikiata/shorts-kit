@@ -2,9 +2,9 @@ import React, {useMemo} from "react";
 import {interpolate, useCurrentFrame, useVideoConfig} from "remotion";
 import {clamp, easeOut} from "../motion/anim";
 import {SOUL} from "../soul";
-import {FONT, H, type Palette} from "../theme";
+import {useFormat} from "../format";
+import {FONT, type Palette} from "../theme";
 import type {Voice, VoiceWord} from "../timings";
-import {PANEL_LEFT, PANEL_MAX_W} from "../frame/SafeZones";
 
 /**
  * Running captions (§7): 2–4 words at a time, never across a sentence end, the
@@ -92,12 +92,17 @@ export const Captions: React.FC<{
   palette,
   uppercase = true,
   size = 66,
-  bottom = Math.round(H * SOUL.captionBottomShare),
-  maxWidth = PANEL_MAX_W,
+  bottom: bottomProp,
+  maxWidth: maxWidthProp,
   secondLanguage = true,
 }) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
+  const {h: H, safe} = useFormat();
+  const bottom = bottomProp ?? safe.captionBottom;
+  const maxWidth = maxWidthProp ?? safe.captionMaxW;
+  const PANEL_LEFT = safe.panelLeft;
+  const PANEL_MAX_W = safe.panelMaxW;
   const t = frame / fps;
   const chunks = useMemo(() => chunkWords(voice.words), [voice.words]);
 

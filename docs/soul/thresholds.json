@@ -84,6 +84,21 @@
     "rule": "§7",
     "why": "caption block bottom ~24% of frame height above the bottom edge, clear of platform UI"
   },
+  "safeLandscapeMarginPct": {
+    "value": 0.05,
+    "rule": "§7a (promo)",
+    "why": "16:9 has no platform button column; keep text inside the classic 5% title-safe margin so TVs and players that overscan do not cut it"
+  },
+  "captionBottomShareLandscape": {
+    "value": 0.12,
+    "rule": "§7 (promo)",
+    "why": "on a 1080-high frame the portrait 24% would put captions in the middle of the picture"
+  },
+  "captionMaxWidthLandscapePx": {
+    "value": 1400,
+    "rule": "§7 (promo)",
+    "why": "a caption line wider than ~73% of a 1920 frame forces the eye to travel; two to four words per chunk stay short anyway"
+  },
   "safeTopPx": {
     "value": 212,
     "rule": "§7a",
@@ -114,6 +129,21 @@
     "rule": "§7e",
     "why": "about two lines at ~30 px inside the panel width"
   },
+  "promoLoudnessLUFS": {
+    "value": -16.5,
+    "rule": "promo",
+    "why": "a film with no voice to protect sits lower than a voiced short; the source TVC mixed at about -16.7 LUFS integrated"
+  },
+  "promoTruePeakMaxDb": {
+    "value": -1.5,
+    "rule": "promo",
+    "why": "AAC overshoots 0.2 to 0.6 dB after encode, so leave margin under the -1 dBTP ceiling"
+  },
+  "promoMaxDurationSeconds": {
+    "value": 90,
+    "rule": "promo",
+    "why": "a promo that needs more than 90 s is two films; lint warns above it, it is not a platform limit"
+  },
   "loudnessLUFS": {
     "value": -13,
     "rule": "§8",
@@ -123,6 +153,11 @@
     "value": -1,
     "rule": "§8",
     "why": "never clip; the platform re-encode adds overshoot"
+  },
+  "uploadTruePeakMaxDb": {
+    "value": -1,
+    "rule": "§8",
+    "why": "the ceiling on the encoded upload file: normalize aims lower (truePeakMaxDb, promoTruePeakMaxDb) and AAC can overshoot by 0.2 to 0.6 dB; encode fails above this"
   },
   "musicUnderVoiceDb": {
     "value": 9,

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "scripts/preview/app.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@kn/ui",
+    "ui": "@kn/ui",
+    "lib": "@kn/lib",
+    "utils": "@kn/lib/knowns/utils",
+    "hooks": "@kn/hooks"
+  },
+  "registries": {
+    "@knowns-ui": "https://ui.knowns.dev/r/{name}.json",
+    "@knowns-ui-pro": {
+      "url": "https://ui.knowns.dev/r/pro/{name}.json",
+      "headers": {
+        "Authorization": "Bearer ${KNOWNS_LICENSE_KEY}"
+      }
+    }
+  }
+}

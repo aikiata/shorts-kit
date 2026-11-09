@@ -161,7 +161,7 @@ Measuring a source file (brightness of a clip, size of an image) only chooses wh
 look; the conclusion is read on a rendered still.
 
 Sound effects (optional, 2–3 per video): cue them to words with `frameAtWord`, see
-[`docs/sfx.md`](sfx.md).
+[`docs/shots/sfx/`](shots/sfx/README.md).
 
 ## 7. Render, normalize, encode: `sk-render`
 

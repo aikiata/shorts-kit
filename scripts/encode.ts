@@ -10,12 +10,14 @@
  */
 import {existsSync, openSync, readSync, closeSync, statSync} from "node:fs";
 import {join} from "node:path";
-import {die, outDir, videoArg} from "./lib/paths";
+import {sizeOf} from "./lib/format";
+import {die, isVoiceless, outDir, videoArg} from "./lib/paths";
 import {decodePcm, ffprobeJson, loudness, must} from "./lib/proc";
 import {loadThresholds} from "./lib/thresholds";
 
 const id = videoArg("bun run encode <id>");
 const T = loadThresholds();
+const want = sizeOf(id);
 const dir = outDir(id);
 const loud = join(dir, `${id}-loud.mp4`);
 const raw = join(dir, `${id}.mp4`);
@@ -77,7 +79,7 @@ const faststart = boxes.indexOf("moov") >= 0 && boxes.indexOf("moov") < boxes.in
 
 const checks: [string, string, boolean][] = [
   ["video codec", String(v.codec_name), v.codec_name === "h264"],
-  ["size", `${v.width}x${v.height}`, v.width === 1080 && v.height === 1920],
+  ["size", `${v.width}x${v.height}`, v.width === want.w && v.height === want.h],
   ["pix_fmt", String(v.pix_fmt), v.pix_fmt === "yuv420p"],
   ["color_range", String(v.color_range), v.color_range === "tv"],
   ["color_primaries", String(v.color_primaries), v.color_primaries === "bt709"],
@@ -109,16 +111,27 @@ for (const [name, got, ok] of checks) {
   console.log(`  ${ok ? "ok " : "✖  "} ${name.padEnd(16)} ${got}`);
   if (!ok) failed++;
 }
-const I = T.loudnessLUFS as number;
+const promo = isVoiceless(id);
+const I = (promo ? T.promoLoudnessLUFS : T.loudnessLUFS) as number;
 const loudOk = Math.abs(lu.I - I) <= 1;
-console.log(`  ${loudOk ? "ok " : "!  "} ${"loudness".padEnd(16)} ${lu.I.toFixed(1)} LUFS (target ${I}), true peak ${lu.truePeak} dBFS`);
-const spreadOk = !(spread < T.musicUnderVoiceDb);
-console.log(`  ${spreadOk ? "ok " : "!  "} ${"voice spread".padEnd(16)} P90−P10 ${spread.toFixed(1)} dB (floor ${T.musicUnderVoiceDb}; warn only)`);
+console.log(`  ${loudOk ? "ok " : "!  "} ${"loudness".padEnd(16)} ${lu.I.toFixed(1)} LUFS (target ${I})`);
+// true peak on the file that is uploaded, not on the normalized one: AAC overshoots (uploadTruePeakMaxDb, §8)
+const ceiling = T.uploadTruePeakMaxDb as number;
+const peakOk = lu.truePeak <= ceiling;
+console.log(`  ${peakOk ? "ok " : "✖  "} ${"true peak".padEnd(16)} ${lu.truePeak} dBFS (max ${ceiling})${peakOk ? "" : ": re-run normalize with a lower peak, or lower the loudest cue"}`);
+if (!peakOk) failed++;
+if (!promo) {
+  const spreadOk = !(spread < T.musicUnderVoiceDb);
+  console.log(`  ${spreadOk ? "ok " : "!  "} ${"voice spread".padEnd(16)} P90−P10 ${spread.toFixed(1)} dB (floor ${T.musicUnderVoiceDb}; warn only)`);
+}
 
 console.log("");
-if (seconds > T.maxDurationSeconds) {
+if (!promo && seconds > T.maxDurationSeconds) {
   console.log(`✖ LENGTH ${seconds.toFixed(1)} s is over the ${T.maxDurationSeconds} s platform ceiling: this is not a Short (§8).`);
   failed++;
+} else if (promo) {
+  const over = seconds > T.promoMaxDurationSeconds;
+  console.log(`  ${over ? "!  " : ""}length ${seconds.toFixed(1)} s (promo advice ${T.promoMaxDurationSeconds} s${over ? ": over it, is this two films?" : ""})`);
 } else console.log(`  length ${seconds.toFixed(1)} s (ceiling ${T.maxDurationSeconds} s)`);
 if (failed) die(`${failed} upload check(s) failed`);
 console.log("  Upload file ready. Watch it end to end before hand-off.");

@@ -1,0 +1,12 @@
+{
+  "bpm": 120,
+  "offset": 0,
+  "tail": 1,
+  "fade": 0,
+  "scenes": [
+    {"id": "hook", "beats": 4},
+    {"id": "product", "beats": 8},
+    {"id": "proof", "beats": 8},
+    {"id": "cta", "beats": 4}
+  ]
+}

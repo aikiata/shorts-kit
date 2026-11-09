@@ -1,6 +1,7 @@
 import React from "react";
 import {AbsoluteFill} from "remotion";
 import {SOUL} from "../soul";
+import {useFormat} from "../format";
 import {H, W} from "../theme";
 
 /**
@@ -41,29 +42,33 @@ export const COVER_BAND = {top: Math.round((H - COVER_VISIBLE_H) / 2), bottom: M
  * stills (`bun run still <id> --safe`); never on in a render.
  */
 export const SafeZones: React.FC<{opacity?: number; cover?: boolean}> = ({opacity = 0.4, cover = false}) => {
+  const {w, h, orientation, safe} = useFormat();
   const band = (style: React.CSSProperties) => (
     <div style={{position: "absolute", background: "#FF2D55", opacity, ...style}} />
   );
+  const landscape = orientation === "landscape";
   return (
     <AbsoluteFill style={{pointerEvents: "none"}}>
-      {band({left: 0, top: 0, width: W, height: SAFE_TOP})}
-      {band({left: 0, top: SAFE_BOTTOM, width: W, height: H - SAFE_BOTTOM})}
-      {band({left: SAFE_RIGHT_X, top: SAFE_RIGHT_FROM_Y, width: W - SAFE_RIGHT_X, height: SAFE_BOTTOM - SAFE_RIGHT_FROM_Y})}
+      {band({left: 0, top: 0, width: w, height: safe.top})}
+      {band({left: 0, top: safe.bottom, width: w, height: h - safe.bottom})}
+      {landscape ? band({left: 0, top: safe.top, width: safe.left, height: safe.bottom - safe.top}) : null}
+      {landscape ? band({left: safe.right, top: safe.top, width: w - safe.right, height: safe.bottom - safe.top}) : null}
+      {safe.rail ? band({left: safe.rail.x, top: safe.rail.fromY, width: w - safe.rail.x, height: safe.bottom - safe.rail.fromY}) : null}
       <div
         style={{
           position: "absolute",
-          left: PANEL_LEFT,
-          top: SAFE_TOP,
-          width: PANEL_MAX_W,
-          height: SAFE_BOTTOM - SAFE_TOP,
+          left: safe.panelLeft,
+          top: safe.top,
+          width: safe.panelMaxW,
+          height: safe.bottom - safe.top,
           border: "3px dashed #C8FF3D",
           boxSizing: "border-box",
         }}
       />
-      {cover ? (
+      {cover && !landscape ? (
         <>
-          {band({left: 0, top: 0, width: W, height: COVER_BAND.top, background: "#FFB800"})}
-          {band({left: 0, top: COVER_BAND.bottom, width: W, height: H - COVER_BAND.bottom, background: "#FFB800"})}
+          {band({left: 0, top: 0, width: w, height: COVER_BAND.top, background: "#FFB800"})}
+          {band({left: 0, top: COVER_BAND.bottom, width: w, height: h - COVER_BAND.bottom, background: "#FFB800"})}
         </>
       ) : null}
     </AbsoluteFill>

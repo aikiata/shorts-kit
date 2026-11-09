@@ -44,7 +44,7 @@ context. Open the file for the job you are doing.
 | §5 | [`03-visuals.md`](docs/soul/03-visuals.md) | **building scenes**: general visual rules; per-visual rules live in [`docs/visuals/`](docs/visuals/README.md). A recorded voice or a filmed take instead of TTS: [`talking-head.md`](docs/visuals/talking-head.md) (§5j) |
 | §6 | [`04-color-and-type.md`](docs/soul/04-color-and-type.md) | **choosing colours or touching fonts** |
 | §7 | [`05-captions.md`](docs/soul/05-captions.md) | **putting text on the frame**: safe zones on three edges, captions vs on-frame text, caption mask, layout traps |
-| §8 | [`06-audio.md`](docs/soul/06-audio.md) | **mixing or choosing music**: licensing and Content ID, loudness, the bed under the voice, loops, SFX (how-to and bundled pack: [`docs/sfx.md`](docs/sfx.md)) |
+| §8 | [`06-audio.md`](docs/soul/06-audio.md) | **mixing or choosing music**: licensing and Content ID, loudness, the bed under the voice, loops, SFX (how-to and bundled pack: [`docs/shots/sfx/`](docs/shots/sfx/README.md)) |
 | §9 | [`07-facts.md`](docs/soul/07-facts.md) | **checking facts**: the ledger in `docs/facts/` |
 | §10 §11 | [`08-cover-and-handoff.md`](docs/soul/08-cover-and-handoff.md) | **making the cover or the hand-off**: cover, encode spec, description template, hand-off files, manual upload |
 | §12 | [`09-motion.md`](docs/soul/09-motion.md) | **animating**: what moves, easing, transitions, continuity across cuts |
@@ -149,12 +149,14 @@ and ears.
 - [ ] No frame is static while the voice is talking; no shot is empty (§5, §12)
 - [ ] Every archive item shows its date and licence on frame (§5)
 - [ ] Timelines and comparisons are to true scale or say "not to scale" (§5)
+- [ ] UI pieces come from Knowns UI (or the filmed product's own kit), in its tokens; nothing
+      drawn from scratch that the kit already has (§5)
 
 **Audio**
 - [ ] Music licence recorded per track, valid on every platform you post to; a
       Content-ID-registered track has its attribution as text (§8)
 - [ ] SFX (if any): ≤ `sfxMaxPerVideo`, each cued to a word with `frameAtWord`, only on a moment the
-      facts already made funny or sharp, never on a sentence or a death toll ([`docs/sfx.md`](docs/sfx.md))
+      facts already made funny or sharp, never on a sentence or a death toll ([`docs/shots/sfx/`](docs/shots/sfx/README.md))
 - [ ] Music fades evenly to 0 and the last 3–4 s are a silent hold
 - [ ] Master ≈ −13 LUFS, no clipping; voice-over-music spread above the floor (§8)
 - [ ] Total length ≤ 180 s, and ≤ the music file for a play-once bed (§8)

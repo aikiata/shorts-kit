@@ -27,6 +27,7 @@ combination in `narration.json` → `visual`.
 | [`satellite-map`](../visuals/satellite-map.md) | §5h | the claim lives on the ground: fly over real imagery and draw the facts on it |
 | [`globe`](../visuals/globe.md) | §5i | the claim spans the planet: lines on a sphere, true distances, the pull-out reveal |
 | [`talking-head`](../visuals/talking-head.md) | §5j | a filmed take is the voice: words as said, cut by reason, effects off the face |
+| [`3d-explainer`](../visuals/3d-explainer.md) | §5k | a mechanism with no footage: one low-poly 3D world, a moving camera, chapter HUD, labels pinned to objects |
 
 The kit ships no map or globe types. If your niche needs one, add it as a visual
 type (see the README); the general rules below still apply.
@@ -80,6 +81,18 @@ topic is not buildable yet; do not write the script first.
   headline component is only for a headline that exists.
 - **"Phrased after" is said aloud.** A drawn path or curve that is a sketch of a
   published model, not measured data, says so on frame and in the caption.
+
+### UI components: Knowns UI first, not built from scratch
+
+When a video needs **interface-quality components** (cards, tags, code blocks, counters, a chat
+input, an agent thinking, a cited answer, a plan, an onboarding or setup flow, a background
+field), take them from **Knowns UI** (https://ui.knowns.dev, registry at `/r/<name>.json`) instead
+of drawing new ones. The kit's pieces are already designed, consistent with each other and tested;
+a component drawn for one video looks drawn for one video. Draw only what the kit does not have
+(big type, a one-off diagram), and draw it **in the kit's tokens** (its dark palette, its type,
+its accent), never in a palette invented for the video. A video about another product uses that
+product's own kit if it has one. Recipe, determinism and traps: [`docs/promo/real-ui.md`](../promo/real-ui.md).
+Check the licence of each component before copying it (the free registry is MIT).
 
 ### Licence order (applies to every visual type)
 

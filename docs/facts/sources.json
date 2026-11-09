@@ -16,5 +16,60 @@
     "licence": "CC BY 4.0",
     "attribution": "EOxCloudless https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016) released under Creative Commons Attribution 4.0 International License",
     "accessed": "2026-11-05"
+  },
+  {
+    "id": "s-0003",
+    "title": "Cat Walk by Arulo (public/music/cat-walk.mp3)",
+    "url": "https://assets.mixkit.co/music/371/371.mp3",
+    "publisher": "Mixkit",
+    "kind": "music",
+    "licence": "Mixkit Stock Music Free License: free for commercial use in videos, no credit needed; the file may not be redistributed on its own (kept out of git)",
+    "attribution": "none required",
+    "accessed": "2026-11-09",
+    "note": "bun run beats: 130.004 BPM, first beat 0.028 s, 55% of kick onsets on the grid. Found through the shorts-kit project's assets/audio list; re-check the licence on mixkit.co before posting."
+  },
+  {
+    "id": "s-0004",
+    "title": "G Eazy NBA type by Arulo (public/music/g-eazy-nba-type.mp3)",
+    "url": "https://assets.mixkit.co/music/403/403.mp3",
+    "publisher": "Mixkit",
+    "kind": "music",
+    "licence": "Mixkit Stock Music Free License: free for commercial use in videos, no credit needed; the file may not be redistributed on its own (kept out of git)",
+    "attribution": "none required",
+    "accessed": "2026-11-09",
+    "note": "bun run beats: 89.378 BPM, first beat 0.188 s, 22% of kick onsets on the grid. Found through the shorts-kit project's assets/audio list; re-check the licence on mixkit.co before posting."
+  },
+  {
+    "id": "s-0005",
+    "title": "House Vibez by Lily J (public/music/house-vibez.mp3)",
+    "url": "https://assets.mixkit.co/music/745/745.mp3",
+    "publisher": "Mixkit",
+    "kind": "music",
+    "licence": "Mixkit Stock Music Free License: free for commercial use in videos, no credit needed; the file may not be redistributed on its own (kept out of git)",
+    "attribution": "none required",
+    "accessed": "2026-11-09",
+    "note": "bun run beats: 121.994 BPM, first beat 0.0485 s, 42% of kick onsets on the grid. Found through the shorts-kit project's assets/audio list; re-check the licence on mixkit.co before posting."
+  },
+  {
+    "id": "s-0006",
+    "title": "Tonight by Michael Ramir C. (public/music/tonight-hiphop.mp3)",
+    "url": "https://assets.mixkit.co/music/841/841.mp3",
+    "publisher": "Mixkit",
+    "kind": "music",
+    "licence": "Mixkit Stock Music Free License: free for commercial use in videos, no credit needed; the file may not be redistributed on its own (kept out of git)",
+    "attribution": "none required",
+    "accessed": "2026-11-09",
+    "note": "bun run beats: 104.87 BPM, first beat 0.4629 s, 26% of kick onsets on the grid. Found through the shorts-kit project's assets/audio list; re-check the licence on mixkit.co before posting."
+  },
+  {
+    "id": "s-0007",
+    "title": "bgm-tech-house (public/music/bgm-tech-house.mp3), title and artist unknown",
+    "url": null,
+    "publisher": "unknown",
+    "kind": "music",
+    "licence": "UNKNOWN: the source project could not trace it to a track page; do not post a video with it",
+    "attribution": "unknown",
+    "accessed": "2026-11-09",
+    "note": "bun run beats: 124.293 BPM, first beat 0.153 s, 37% of kick onsets on the grid. Local only, out of git."
   }
 ]

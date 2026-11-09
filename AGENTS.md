@@ -2,7 +2,7 @@
 
 A kit for making narrated vertical shorts (TikTok, YouTube Shorts, Reels) with a coding agent and Remotion.
 
-**For any request to make, edit, render or hand off a short, invoke the `sk-pipeline` skill first and follow it.**
+**For any request to make, edit, render or hand off a short, invoke the `sk-pipeline` skill first and follow it. For an ad, TVC or landscape video, invoke `sk-promo` instead.**
 Runtimes without a Skill tool: read `.claude/skills/sk-pipeline/SKILL.md` (also at `.agents/skills/`).
 
 ## Read first
@@ -22,6 +22,7 @@ Open only the `docs/soul/` file for the step you are on. Exact commands per step
 | Skill | Use for |
 |---|---|
 | `sk-pipeline` | the whole video, in order; start here |
+| `sk-promo` | an ad, TVC or launch film, vertical or landscape (`docs/promo/`) |
 | `sk-brief` | idea, flow, visual types, licences, `briefs/<id>.md` |
 | `sk-facts` | sourcing, verifying, ledger records, image licences |
 | `sk-narration` | `narration.json`, TTS, lint |
@@ -34,7 +35,7 @@ Open only the `docs/soul/` file for the step you are on. Exact commands per step
 ## Commands
 
 ```bash
-bun run new <id> --flow <A..T>   # scaffold src/videos/<id>/
+bun run new <id> --flow <A..T> [--format portrait|landscape] [--mode short|promo]   # scaffold src/videos/<id>/
 bun run dev <id>                 # Remotion Studio
 bun run tts <id> [--force]       # voice.mp3 + voice.json
 bun run from <file|dir>...       # "edit my video": new + ingest (every clip) + cut + storyboard stub

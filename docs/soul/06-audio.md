@@ -119,7 +119,7 @@ track, taking on an attribution duty for nothing).
   libraries, or record the debt in the video's credits.
 
 How-to, the bundled CC0 pack (`whoosh`, `pop`, `tick`, `boom`, `ding`, `riser`, `glitch`, `drop`)
-and worked cases: [`docs/sfx.md`](../sfx.md).
+and worked cases: [`docs/shots/sfx/`](../shots/sfx/README.md).
 
 ## 8b. Music licensing and Content ID: rules, not suggestions [hard]
 

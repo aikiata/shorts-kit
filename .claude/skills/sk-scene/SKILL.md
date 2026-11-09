@@ -26,6 +26,10 @@ video never breaks another video's bundle. **A video never imports another
 video.** Something two videos need goes to `src/shared/<kind>/`, written against
 `theme.ts` and the safe zones, not copied between folders.
 
+The canvas is per video (`video.json` → `format`). Read size and safe area from
+`useFormat()` / `safeFor()` in `src/shared/format.ts`; `W` and `H` in `theme.ts` are the
+portrait defaults only. Landscape promos: `docs/promo/README.md`.
+
 ## Steps
 
 0. **Storyboard first, approved before code.** After `bun run tts`, run
@@ -39,9 +43,11 @@ video.** Something two videos need goes to `src/shared/<kind>/`, written against
    need the user's approval again before their scenes change.
    Schema and rules: `docs/storyboard.md`.
 1. **Check `src/shared/` before writing a component.** It already handles the
-   9:16 frame, theme and safe zones. External component libraries bring their own
-   fonts and colours; if you borrow code, rewrite it against `theme.ts` and note
-   the source and licence in a comment. Avoid runtime dependencies that fetch
+   9:16 frame, theme and safe zones. For interface components (cards, tags, code,
+   chat, agent UI, product flows, backgrounds) take them from **Knowns UI**, in its
+   own tokens, instead of drawing new ones (§5; recipe in `docs/promo/real-ui.md`).
+   Other borrowed code is rewritten against `theme.ts`, with its source and licence
+   in a comment. Avoid runtime dependencies that fetch
    data while rendering: a re-render must produce the same file.
 2. **Time from the voice, never by hand.** Use `src/shared/timings.ts`:
    `sceneTimings(voice, fps, outroHold)`, `totalFrames(voice, fps, outroHold)`,
@@ -63,7 +69,7 @@ video.** Something two videos need goes to `src/shared/<kind>/`, written against
    **Sound effects (optional):** 2–3 per video, each cued to a word with
    `frameAtWord(voice, FPS, scene, word)` and passed as `sfx={...}` to `ShortsTemplate`.
    Only where the facts are already funny or sharp, never on a sentence or a death
-   toll. Ids, rules and cases: `docs/sfx.md`.
+   toll. Ids, rules and cases: `docs/shots/sfx/` (one card per effect).
 7. **Type-check and boundaries:** `bun run check`.
 8. **Still-first review.** Before any full render:
    ```bash

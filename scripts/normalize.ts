@@ -6,14 +6,16 @@
  */
 import {existsSync} from "node:fs";
 import {join} from "node:path";
-import {die, outDir, videoArg} from "./lib/paths";
+import {die, isVoiceless, outDir, videoArg} from "./lib/paths";
 import {loudness, must, run} from "./lib/proc";
 import {loadThresholds} from "./lib/thresholds";
 
 const id = videoArg("bun run normalize <id>");
 const T = loadThresholds();
-const I = T.loudnessLUFS as number;
-const TP = T.truePeakMaxDb as number;
+// a promo with a voice-over is mixed like a short (§8); only a film with no voice gets the promo targets
+const promo = isVoiceless(id);
+const I = (promo ? T.promoLoudnessLUFS : T.loudnessLUFS) as number;
+const TP = (promo ? T.promoTruePeakMaxDb : T.truePeakMaxDb) as number;
 const LRA = 11;
 const rate = String(T.audioSampleRate ?? 48000);
 const src = join(outDir(id), `${id}.mp4`);

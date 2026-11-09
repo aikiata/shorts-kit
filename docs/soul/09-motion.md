@@ -11,6 +11,10 @@
 was a smoothstep, whose **derivative is zero at both ends**. Every move in every
 video landed at exactly zero speed and sat there for the rest of the sentence.
 
+- **Vary the shot size.** Motion is one half of a shot; the other half is how big the subject
+  is (`WS`, `MS`, `CU`, `ECU`). Change size at a beat and never hold one size for three shots
+  in a row: [`docs/shots/sizes.md`](../shots/sizes.md). The storyboard's `size` field and its
+  lint warning enforce it.
 - **Speed floor: no move lands at zero.** Blend a linear part into the easing
   (`camEase(t, tail)` in `src/shared/motion/Camera`, used by `Camera`): `tail` is the exit speed as a
   fraction of the move's average speed; 0 is plain smoothstep, 1 is linear. Default

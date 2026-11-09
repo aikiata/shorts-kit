@@ -78,3 +78,7 @@ Not posted: this is the kit's demo.
 
 | Platform | Date | Link | Visibility | Title used |
 | --- | --- | --- | --- | --- |
+
+## Made before
+
+The storyboard was planned before every shot needed a `size` and before shot cards (docs/storyboard.md, 2026-11-09): `lint` warns that no shot has a size. Kept as it is: a finished video is not rewritten to fit a later rule.

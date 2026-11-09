@@ -17,3 +17,10 @@ public/img/sat/*
 # VieNeu TTS Python env (scripts/lib/engines/vieneu.ts)
 .venv-vieneu/
 __pycache__/
+
+# Page captures, rebuilt by `bun run capture <id> <url>`
+public/capture/
+
+# Music files stay local (licence unverified or not redistributable)
+public/music/*.mp3
+public/music/*.beats.json
