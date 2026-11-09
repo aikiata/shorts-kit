@@ -1,0 +1,84 @@
+{
+  "bpm": 119.952,
+  "offset": 0,
+  "tail": 2,
+  "fade": 0,
+  "music": {
+    "src": "music/elevenlabs-v44-a.mp3",
+    "volume": 0.85,
+    "start": 0.0376,
+    "fadeIn": 0.3,
+    "fadeOut": 2.5,
+    "repeatEvery": 28.011,
+    "crossfade": 1.9
+  },
+  "voice": {
+    "voice": "TX3LPaxmHKxFdv7VOQHJ",
+    "model": "eleven_v3",
+    "volume": 1,
+    "lines": [
+      {
+        "id": "v1",
+        "text": "Your decisions, specs and tasks are scattered. Your agent reads none of them.",
+        "scene": "where",
+        "seconds": 0.8
+      },
+      {
+        "id": "v2",
+        "text": "So you explain. Review. Redo.",
+        "scene": "cost",
+        "seconds": 0.6
+      },
+      {
+        "id": "v3",
+        "text": "Knowns keeps them in your repo. Connected.",
+        "scene": "reveal",
+        "seconds": 0.6
+      },
+      {
+        "id": "v4",
+        "text": "Now your agent builds what you decided. And shows where it came from.",
+        "scene": "right",
+        "seconds": 0.6
+      },
+      {
+        "id": "v5",
+        "text": "Project memory, from the command line.",
+        "scene": "lockup",
+        "seconds": 0.4
+      },
+      {
+        "id": "c3",
+        "text": "Knowns keeps your decisions, specs and tasks in your repo. Connected.",
+        "scene": "reveal",
+        "seconds": 0.6
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "wrong",
+      "beats": 10
+    },
+    {
+      "id": "where",
+      "beats": 14
+    },
+    {
+      "id": "cost",
+      "beats": 12
+    },
+    {
+      "id": "reveal",
+      "beats": 20
+    },
+    {
+      "id": "right",
+      "beats": 20
+    },
+    {
+      "id": "lockup",
+      "beats": 12
+    }
+  ]
+}

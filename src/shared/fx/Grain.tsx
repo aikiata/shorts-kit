@@ -1,7 +1,6 @@
 import React, {useId} from "react";
-import {useCurrentFrame} from "remotion";
+import {useCurrentFrame, useVideoConfig} from "remotion";
 import {svgId} from "../random";
-import {H, W} from "../theme";
 
 /**
  * Fine film grain over the frame, new pattern every two frames. Put it near the
@@ -9,6 +8,7 @@ import {H, W} from "../theme";
  */
 export const Grain: React.FC<{opacity?: number; frequency?: number; frame?: number}> = ({opacity = 0.22, frequency = 0.85, frame}) => {
   const now = useCurrentFrame();
+  const {width: W, height: H} = useVideoConfig();
   const f = frame ?? now;
   const id = svgId(useId(), "grain");
   return (

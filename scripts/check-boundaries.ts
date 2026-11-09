@@ -3,7 +3,8 @@
  *
  * - a video never imports another video;
  * - a video imports only its own folder, src/shared/ and packages;
- * - src/shared/ never imports a video or a script.
+ * - src/shared/ never imports a video or a script;
+ * - nothing imports src/demo/ (reference code, not built; skipped here and in tsconfig).
  *
  * A half-built video must never break another video's bundle (§13).
  */
@@ -16,7 +17,10 @@ const files: string[] = [];
 const walk = (dir: string) => {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) walk(path);
+    // src/demo/ is reference code to read, never built or imported (src/demo/README.md)
+    if (statSync(path).isDirectory()) {
+      if (path !== join(SRC, "demo")) walk(path);
+    }
     else if (/\.(ts|tsx|js|jsx|mjs)$/.test(name)) files.push(path);
   }
 };
@@ -32,6 +36,7 @@ for (const file of files) {
     const spec = m[1] ?? m[2] ?? m[3] ?? m[4];
     if (!spec || !spec.startsWith(".")) continue; // a package
     const target = relative(SRC, resolve(dirname(file), spec));
+    if (target.startsWith("demo/")) errors.push(`${rel}: imports src/demo/, which is reference code and is not built (${spec})`);
     if (rel.startsWith("shared/")) {
       if (target.startsWith("videos/")) errors.push(`${rel}: shared code imports a video (${spec})`);
       else if (target.startsWith("..") && !target.startsWith("../docs/soul/")) errors.push(`${rel}: shared code reaches outside src/ (${spec})`);

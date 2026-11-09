@@ -1,6 +1,5 @@
 import React from "react";
-import {AbsoluteFill, useCurrentFrame} from "remotion";
-import {H, W} from "../theme";
+import {AbsoluteFill, useCurrentFrame, useVideoConfig} from "remotion";
 import {ease, lerp} from "./anim";
 
 export type CameraMove = {
@@ -36,6 +35,7 @@ export const Camera: React.FC<{
   children: React.ReactNode;
 }> = ({move, t, tail = 0.34, frame, children}) => {
   const now = useCurrentFrame();
+  const {width: W, height: H} = useVideoConfig();
   if (!move) return <AbsoluteFill>{children}</AbsoluteFill>;
   const f = frame ?? now;
   const k = camEase(t, tail);

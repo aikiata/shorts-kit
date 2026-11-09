@@ -1,0 +1,123 @@
+// corner-spotlight-reveal: benchmarked on clickup-30.mp4 41.5–44.6s:
+// On a black field, a radial spotlight from the top-left corner expands from small to large, gradually "lighting up" the white shorts-kit shot-library interface,
+// the lit area develops while the unlit area sinks into black, finally lighting the full screen. The light is the transition.
+import React from 'react';
+import { AbsoluteFill, useCurrentFrame, interpolate, Easing } from 'remotion';
+
+const FONT = '"Avenir Next", "Helvetica Neue", Helvetica, sans-serif';
+
+// Grayscale shot-library interface (the Shots page of shorts-kit, hand-drawn, replacing a real UI)
+const InboxPanel: React.FC = () => (
+  <div
+    style={{
+      width: 1920,
+      height: 1080,
+      background: '#f6f6f5',
+      fontFamily: FONT,
+      padding: '90px 120px',
+      boxSizing: 'border-box',
+      color: '#2c2c2c',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
+      <div style={{ fontSize: 118, fontWeight: 700, letterSpacing: -2 }}>Shots</div>
+      <div
+        style={{
+          width: 0, height: 0, marginTop: 26,
+          borderLeft: '16px solid transparent',
+          borderRight: '16px solid transparent',
+          borderTop: '20px solid #3a3a3a',
+        }}
+      />
+    </div>
+    <div style={{ display: 'flex', gap: 64, marginTop: 90, fontSize: 44, color: '#555' }}>
+      <div style={{ background: '#e9e8f6', color: '#5b55c8', padding: '10px 34px', borderRadius: 14, fontWeight: 600 }}>All</div>
+      <div style={{ padding: '10px 0' }}>Camera</div>
+      <div style={{ padding: '10px 0' }}>Effects</div>
+      <div style={{ padding: '10px 0' }}>Data</div>
+      <div style={{ padding: '10px 0' }}>Outro</div>
+    </div>
+    {[0, 1, 2].map((row) => (
+      <div key={row} style={{ display: 'flex', alignItems: 'center', gap: 30, marginTop: row === 0 ? 96 : 64 }}>
+        <div style={{ width: 42, height: 42, border: '3px solid #c9c9c7', borderRadius: 10 }} />
+        <div style={{ width: 14, height: 14, borderRadius: 7, background: '#5b55c8' }} />
+        <div style={{ width: 56, height: 56, borderRadius: 28, background: '#efe4e2' }} />
+        <div>
+          <div style={{ display: 'flex', gap: 22, alignItems: 'center' }}>
+            <div style={{ height: 22, width: 220 + ((row * 67) % 90), background: '#3f3f3f', borderRadius: 11 }} />
+            <div style={{ width: 8, height: 8, borderRadius: 4, background: '#bbb' }} />
+            <div style={{ height: 18, width: 260, background: '#c9c9c7', borderRadius: 9 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 14, marginTop: 16 }}>
+            <div style={{ height: 18, width: 300, background: '#8f8bd8', borderRadius: 9, opacity: 0.75 }} />
+            <div style={{ height: 18, width: 340 - ((row * 91) % 120), background: '#d8d8d6', borderRadius: 9 }} />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+export const CornerSpotlightReveal: React.FC = () => {
+  const frame = useCurrentFrame();
+
+  // Spotlight radius expansion: constant speed throughout (user ruling "the whole process must be constant speed": strictly linear, no easing)
+  // r+feather=1.85r is the light front; 1.85*1300≈2400 just covers the full-screen diagonal at the end of the clip,
+  // guaranteeing the expansion fills the full duration rather than saturating in the first third
+  const r = interpolate(frame, [0, 100], [160, 1300], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  // Light center drifts at constant speed along the top-left corner (linear)
+  const cx = interpolate(frame, [0, 96], [140, 420], { extrapolateRight: 'clamp' });
+  const cy = interpolate(frame, [0, 96], [90, 260], { extrapolateRight: 'clamp' });
+
+  // Soft-edge width: the edge is more feathered while expanding
+  const feather = r * 0.85;
+
+  // UI slight perspective drift (in the original the camera slowly pushes against the interface)
+  const drift = interpolate(frame, [0, 100], [0, 1]);
+  const scale = 1.75 - 0.28 * drift;
+  const tx = -40 + 70 * drift;
+  const ty = -30 + 50 * drift;
+
+  const mask = `radial-gradient(circle ${r + feather}px at ${cx}px ${cy}px, rgba(255,255,255,1) ${Math.max(
+    0,
+    ((r - feather * 0.25) / (r + feather)) * 100,
+  )}%, rgba(255,255,255,0) 100%)`;
+
+  return (
+    <AbsoluteFill style={{ background: '#000' }}>
+      <AbsoluteFill
+        style={{
+          WebkitMaskImage: mask,
+          maskImage: mask,
+          transform: `scale(${scale}) translate(${tx}px, ${ty}px) rotate(${-1.2 + 1.2 * drift}deg)`,
+          transformOrigin: '18% 12%',
+        }}
+      >
+        <InboxPanel />
+      </AbsoluteFill>
+      {/* The spotlight's own white-hot halo (laid above the interface, brightest at the light center) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: cx - r * 0.7,
+          top: cy - r * 0.7,
+          width: r * 1.4,
+          height: r * 1.4,
+          borderRadius: '50%',
+          background: 'radial-gradient(closest-side, rgba(255,255,255,0.85), rgba(255,255,255,0.25) 45%, transparent 75%)',
+          filter: 'blur(26px)',
+          opacity: interpolate(frame, [0, 10, 60, 90], [0, 0.9, 0.55, 0], {
+            extrapolateRight: 'clamp',
+          }),
+          pointerEvents: 'none',
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+export const CORNER_SPOTLIGHT_REVEAL_DURATION = 130;

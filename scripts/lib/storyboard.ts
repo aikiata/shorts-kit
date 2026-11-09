@@ -12,21 +12,35 @@
  * shot would silently point at the wrong one, still "approved". `--sync` re-pins
  * shots by their text, and a shot whose line changed goes back to "planned".
  */
-import {existsSync, readFileSync} from "node:fs";
+import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
-import {videoDir} from "./paths";
+import {promoSeconds, promoTimings, type Promo} from "../../src/shared/promo";
+import {p, videoDir} from "./paths";
 
 export type ShotStatus = "planned" | "approved" | "built";
+export const SHOT_SIZES = ["WS", "MS", "CU", "ECU"];
+export const SHOT_ANGLES = ["eye", "high", "low", "top", "tilt"];
 export const SHOT_STATUSES: ShotStatus[] = ["planned", "approved", "built"];
 
 export type Shot = {
   id: string;
-  /** Global line index in narration order (0 = first line of the video). */
+  /** Global line index in narration order (0 = first line of the video). Voiced videos only. */
   line: number;
+  /** Promo with no voice: the promo.json scene the shot sits in (instead of `line`). */
+  scene?: string;
+  /** Promo with no voice: where in the scene the shot starts, in beats (needs `bpm`) or seconds. Default 0. */
+  beat?: number;
+  seconds?: number;
   /** The on-screen text of that line when the shot was planned (written by --init / --sync). */
   lineText?: string;
   /** Optional word inside the line where the shot starts; default the line start. */
   anchor?: string | null;
+  /** Framing: WS, MS, CU or ECU (docs/shots/sizes.md). */
+  size?: string;
+  /** Optional camera angle: eye (default), high, low, top, tilt. */
+  angle?: string;
+  /** Optional shot card from docs/shots/ (a named motion recipe), e.g. "crash-zoom-punch". */
+  card?: string;
   /** What the camera does, in plain words: "push in 1.0 to 1.1 on the boat", "fly from delta to Saigon". */
   camera: string;
   /** What is on screen: the world, the figure, what appears or changes during the shot. */
@@ -58,7 +72,7 @@ export type TimedShot = Shot & {start: number | null; end: number | null; anchor
 export const storyboardPath = (id: string) => join(videoDir(id), "storyboard.json");
 
 /** Field order on disk: `lineText` right after `line`, so a shot reads as "where, what it was planned on, how". */
-const ORDER = ["id", "line", "lineText", "anchor", "camera", "onScreen", "text", "visual", "transition", "sfx", "notes", "status"];
+const ORDER = ["id", "line", "scene", "beat", "seconds", "lineText", "anchor", "size", "angle", "card", "camera", "onScreen", "text", "visual", "transition", "sfx", "notes", "status"];
 const ordered = (s: Shot) => {
   const o: Record<string, unknown> = {};
   for (const k of ORDER) if (k in s) o[k] = (s as Record<string, unknown>)[k];
@@ -149,7 +163,7 @@ export const syncStoryboard = (sb: Storyboard, lines: string[]): {sb: Storyboard
   lines.forEach((text, i) => {
     if (used.has(i)) return;
     const id = nextId();
-    shots.push({id, line: i, lineText: text, anchor: null, camera: "TODO", onScreen: "TODO", text: null, transition: "cut", sfx: null, status: "planned"});
+    shots.push({id, line: i, lineText: text, anchor: null, size: "TODO", camera: "TODO", onScreen: "TODO", text: null, transition: "cut", sfx: null, status: "planned"});
     changes.push({shot: id, kind: "added", detail: `new shot for line ${i} "${text}"`});
   });
   shots.sort((a, b) => a.line - b.line);
@@ -203,8 +217,128 @@ export const storyboardHint = (id: string, lines: string[]) => {
 
 export type Issue = {level: "error" | "warn"; message: string};
 
+/** Card ids: every card file in docs/shots/ and its sub-folders (the shorts-kit library), by file name. */
+const NOT_CARDS = new Set(["README.md", "sizes.md", "ATTRIBUTION.md", "LICENSE"]);
+export const shotCardIds = (): string[] => {
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    let entries: import("node:fs").Dirent[] = [];
+    try {
+      entries = readdirSync(dir, {withFileTypes: true});
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      // docs/shots/sfx/ holds sound cards, named by a shot's `sfx` field, not by `card`
+      if (e.isDirectory() && e.name !== "sfx") walk(join(dir, e.name));
+      else if (e.isDirectory()) continue;
+      else if (e.name.endsWith(".md") && !NOT_CARDS.has(e.name)) out.push(e.name.replace(/\.md$/, ""));
+    }
+  };
+  walk(p("docs/shots"));
+  return [...new Set(out)].sort();
+};
+
+/** Sound ids: the cards in docs/shots/sfx/ (the bundled pack, and any file a channel added a card for). */
+export const sfxIds = (): string[] => {
+  try {
+    return readdirSync(p("docs/shots/sfx")).filter((f) => f.endsWith(".md") && f !== "README.md").map((f) => f.replace(/\.md$/, ""));
+  } catch {
+    return [];
+  }
+};
+const SFX_IDS = sfxIds();
+
+/** Checks every shot needs, voiced or not: camera, size, angle, card, screen, status, visual. */
+const shotIssues = (s: Shot, visualIds: string[], cardIds: string[]): Issue[] => {
+  const tag = s.id || "(no id)";
+  const out: Issue[] = [];
+  if (!s.camera?.trim()) out.push({level: "warn", message: `${tag}: no camera move (§12: no shot stands still while the voice speaks)`});
+  if (s.size !== undefined && s.size !== "TODO" && !SHOT_SIZES.includes(s.size)) out.push({level: "warn", message: `${tag}: size "${s.size}" is not one of ${SHOT_SIZES.join(", ")} (docs/shots/sizes.md)`});
+  if (s.angle !== undefined && !SHOT_ANGLES.includes(s.angle)) out.push({level: "warn", message: `${tag}: angle "${s.angle}" is not one of ${SHOT_ANGLES.join(", ")} (docs/shots/sizes.md)`});
+  if (s.card !== undefined && cardIds.length && !cardIds.includes(s.card)) {
+    const near = cardIds.filter((c) => c.includes(s.card!.split("-")[0])).slice(0, 5);
+    out.push({level: "warn", message: `${tag}: card "${s.card}" is not in docs/shots/ (${cardIds.length} cards, one .md file each)${near.length ? `; close: ${near.join(", ")}` : ""}`});
+  }
+  if (!s.onScreen?.trim()) out.push({level: "warn", message: `${tag}: nothing described on screen`});
+  // sfx: a bundled id with a card, or a file under public/ (then give it a card with its licence)
+  if (s.sfx) {
+    const isFile = /\.(mp3|wav|m4a|ogg)$/i.test(s.sfx);
+    if (isFile && !existsSync(p("public", s.sfx))) out.push({level: "warn", message: `${tag}: sfx file public/${s.sfx} does not exist`});
+    else if (isFile && !SFX_IDS.some((id) => s.sfx!.endsWith(`/${id}.${s.sfx!.split(".").pop()}`))) out.push({level: "warn", message: `${tag}: sfx file ${s.sfx} has no card in docs/shots/sfx/ (its licence and loudness are not recorded)`});
+    else if (!isFile && SFX_IDS.length && !SFX_IDS.includes(s.sfx)) out.push({level: "warn", message: `${tag}: sfx "${s.sfx}" is not a sound card (${SFX_IDS.join(", ")}; docs/shots/sfx/)`});
+  }
+  if (!SHOT_STATUSES.includes(s.status)) out.push({level: "error", message: `${tag}: status must be one of ${SHOT_STATUSES.join(", ")}`});
+  if (s.visual && visualIds.length && !visualIds.includes(s.visual)) out.push({level: "warn", message: `${tag}: visual "${s.visual}" is not in docs/visuals/`});
+  return out;
+};
+
+/** Never three shots in a row at one size (docs/shots/sizes.md); and every shot has a size, or the rhythm cannot be checked. */
+const sizeRunIssues = (shots: Shot[]): Issue[] => {
+  const out: Issue[] = [];
+  const bare = shots.filter((s) => s.size === undefined).map((s) => s.id);
+  if (bare.length) out.push({level: "warn", message: `${bare.length === shots.length ? "no shot has" : `${bare.length} shot${bare.length > 1 ? "s have" : " has"}`} a size (${bare.join(", ")}): give each one of ${SHOT_SIZES.join(", ")} so the size rhythm can be checked (docs/shots/sizes.md)`});
+  for (let i = 2; i < shots.length; i++) {
+    const [a, b, c] = [shots[i - 2], shots[i - 1], shots[i]];
+    if (a.size && a.size !== "TODO" && a.size === b.size && b.size === c.size) out.push({level: "warn", message: `${a.id}, ${b.id}, ${c.id}: three shots in a row at size ${a.size}; change size at a beat (docs/shots/sizes.md)`});
+  }
+  return out;
+};
+
+/* ── promo with no voice: shots pinned to a scene and a beat (or seconds) inside it ── */
+
+export type PromoTimedShot = Shot & {start: number | null; end: number | null};
+
+/** Seconds where each promo shot starts and ends, from promo.json: scene start + beat (or seconds); a shot ends where the next starts. */
+export const timePromoShots = (sb: Storyboard, promo: Promo, fps = 30): PromoTimedShot[] => {
+  const scenes = promoTimings(promo, fps);
+  const starts = sb.shots.map((s) => {
+    const sc = scenes.find((x) => x.id === s.scene);
+    if (!sc) return null;
+    const off = s.beat !== undefined && promo.bpm ? (s.beat * 60) / promo.bpm : (s.seconds ?? 0);
+    return sc.from / fps + off;
+  });
+  const total = promoSeconds(promo);
+  return sb.shots.map((s, i) => {
+    const start = starts[i];
+    const next = starts.slice(i + 1).find((x) => x !== null) ?? null;
+    return {...s, start, end: start === null ? null : (next ?? total)};
+  });
+};
+
+/** Problems in a voiceless promo's storyboard: unknown scenes, shots out of order or past their scene, plus the shared shot checks. */
+export const checkPromoStoryboard = (sb: Storyboard, promo: Promo, visualIds: string[], cardIds: string[] = shotCardIds()): Issue[] => {
+  if (!Array.isArray(sb.shots) || !sb.shots.length) return [{level: "error", message: "storyboard.json has no shots"}];
+  const issues: Issue[] = [];
+  const fps = 30;
+  const scenes = promoTimings(promo, fps);
+  const ids = new Set<string>();
+  const timed = timePromoShots(sb, promo, fps);
+  let last = -1;
+  for (const [i, s] of sb.shots.entries()) {
+    const tag = s.id || "(no id)";
+    if (!s.id) issues.push({level: "error", message: "a shot has no id"});
+    else if (ids.has(s.id)) issues.push({level: "error", message: `duplicate shot id ${s.id}`});
+    ids.add(s.id);
+    const sc = scenes.find((x) => x.id === s.scene);
+    if (!s.scene) issues.push({level: "error", message: `${tag}: no scene (a promo shot sits in a promo.json scene)`});
+    else if (!sc) issues.push({level: "error", message: `${tag}: scene "${s.scene}" is not in promo.json (${scenes.map((x) => x.id).join(", ")})`});
+    if (s.beat !== undefined && !promo.bpm) issues.push({level: "error", message: `${tag}: beat needs "bpm" in promo.json; use seconds`});
+    const st = timed[i].start;
+    if (sc && st !== null) {
+      if (st >= (sc.from + sc.duration) / fps) issues.push({level: "error", message: `${tag}: starts after its scene "${s.scene}" ends`});
+      if (st < last) issues.push({level: "error", message: `${tag}: shots must follow the film order`});
+      last = Math.max(last, st);
+    }
+    issues.push(...shotIssues(s, visualIds, cardIds));
+  }
+  issues.push(...sizeRunIssues(sb.shots));
+  for (const sc of scenes) if (!sb.shots.some((s) => s.scene === sc.id)) issues.push({level: "warn", message: `scene "${sc.id}" has no shot`});
+  return issues;
+};
+
 /** Problems a reviewer should see before approving the storyboard. */
-export const checkStoryboard = (sb: Storyboard, lines: string[], voice: VoiceLike | null, visualIds: string[]): Issue[] => {
+export const checkStoryboard = (sb: Storyboard, lines: string[], voice: VoiceLike | null, visualIds: string[], cardIds: string[] = shotCardIds()): Issue[] => {
   const lineCount = lines.length;
   const issues: Issue[] = [];
   if (!Array.isArray(sb.shots) || !sb.shots.length) return [{level: "error", message: "storyboard.json has no shots"}];
@@ -220,9 +354,7 @@ export const checkStoryboard = (sb: Storyboard, lines: string[], voice: VoiceLik
     else covered.add(s.line);
     if (s.line < last) issues.push({level: "error", message: `${tag}: shots must follow the narration order`});
     last = Math.max(last, s.line);
-    if (!s.camera?.trim()) issues.push({level: "warn", message: `${tag}: no camera move (§12: no shot stands still while the voice speaks)`});
-    if (!s.onScreen?.trim()) issues.push({level: "warn", message: `${tag}: nothing described on screen`});
-    if (!SHOT_STATUSES.includes(s.status)) issues.push({level: "error", message: `${tag}: status must be one of ${SHOT_STATUSES.join(", ")}`});
+    issues.push(...shotIssues(s, visualIds, cardIds));
     const cur = lines[s.line];
     if (cur !== undefined && s.lineText === undefined) issues.push({level: "warn", message: `${tag}: not pinned to its line text; run \`bun run storyboard <id> --sync\` so a script change cannot move it silently`});
     else if (cur !== undefined && s.lineText !== undefined && !sameLine(cur, s.lineText)) {
@@ -231,8 +363,8 @@ export const checkStoryboard = (sb: Storyboard, lines: string[], voice: VoiceLik
         message: `${tag}: planned against "${s.lineText}", line ${s.line} is now "${cur}"${s.status !== "planned" ? ` but it is still ${s.status}` : ""}. Run \`bun run storyboard <id> --sync\` and re-check the shot`,
       });
     }
-    if (s.visual && visualIds.length && !visualIds.includes(s.visual)) issues.push({level: "warn", message: `${tag}: visual "${s.visual}" is not in docs/visuals/`});
   }
+  issues.push(...sizeRunIssues(sb.shots));
   if (!voice || voice.estimated) issues.push({level: "warn", message: "timings are estimates: plan against the real voice (bun run tts)"});
   else for (const t of timeShots(sb, voice)) if (!t.anchorFound) issues.push({level: "error", message: `${t.id}: anchor "${t.anchor}" is not in line ${t.line} any more`});
   return issues;

@@ -8,40 +8,6 @@ tones and noise; no third-party audio, no samples). They are released under
 is normalised to about −20 LUFS (`sfxTargetLUFS`, §8), so it sits just under the
 voice.
 
-| id | file | when to use |
-| --- | --- | --- |
-| `whoosh` | `whoosh.mp3` | a scene change or a big camera move |
-| `pop` | `pop.mp3` | a text, chip or number appears |
-| `tick` | `tick.mp3` | counting: one tick per counted item |
-| `boom` | `boom.mp3` | the turn: the one moment the story flips |
-| `ding` | `ding.mp3` | the payoff or the answer lands |
-| `riser` | `riser.mp3` | build tension just before a reveal (ends on the reveal word) |
-| `glitch` | `glitch.mp3` | an error, a wrong idea, a myth on screen |
-| `drop` | `drop.mp3` | disappointment, a fail, a number that falls |
-
-Cue them from a video with `src/shared/audio/Sfx.tsx`, anchored to a word:
-
-```tsx
-sfx={[{id: "ding", at: frameAtWord(voice, FPS, "payoff", "blue")}]}  // nth is 1-based, throws if not found
-```
-
-Rules (§8): at most `sfxMaxPerVideo` effects per video. They are accents;
-scattered evenly they turn an explainer into a meme video.
-
-## Adding your own
-
-1. Take effects from CC0 sources: Pixabay Sound Effects, or freesound.org
-   filtered to the CC0 licence. Read the licence on the page of the exact file.
-2. Normalise each to about −20 LUFS (`ffmpeg -i in.wav -af loudnorm=I=-20:TP=-2 out.mp3`)
-   and put it here.
-3. Record it in `docs/facts/sources.json` with `"kind": "sfx"`, the page URL and
-   the licence exactly as stated.
-4. Cue it with `{src: "sfx/<file>.mp3", at}`.
-
-## Meme sounds are owned audio
-
-Popular meme sounds (the Roblox "oof", the Among Us kill sound, sitcom stings,
-game and TV clips, and so on) belong to someone. A platform may tolerate them
-today and claim or mute the video tomorrow. Using them is the channel's own
-risk, decided per video and recorded in the ledger; **never commit them to a
-public repository**, because redistribution is a separate right you do not have.
+When to use each one, what to avoid, its length and loudness: one card per effect in
+[`docs/shots/sfx/`](../../docs/shots/sfx/README.md). The cards are the only place this is written;
+`bun run check` fails when `src/shared/audio/Sfx.tsx` disagrees with them.

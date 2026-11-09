@@ -1,6 +1,14 @@
+---
+kind: guide
+rule: §8
+thresholds: [sfxMaxPerVideo, sfxTargetLUFS]
+skills: [sk-scene, sk-render]
+related: [docs/soul/06-audio.md, docs/promo/sound.md, docs/storyboard.md]
+---
+
 # Sound effects: how to use them
 
-Rules live in [§8 of `docs/soul/06-audio.md`](soul/06-audio.md). This page is the how-to: the bundled pack, the
+Rules live in [§8 of `docs/soul/06-audio.md`](../../soul/06-audio.md). This page is the how-to: the bundled pack, the
 code, and worked cases. The practice comes from one channel that put 17 effects on 8 videos and learned where they
 help and where they hurt.
 
@@ -15,16 +23,21 @@ out loud what the viewer is already thinking. It never cheers a flat moment up.
 licence to track. Each long effect is normalised to about −20 LUFS. The two short ones (`pop`, `tick`) are too short
 for a loudness measurement, so they were matched by peak.
 
-| id | Use it when | Do not use it for |
-|---|---|---|
-| `whoosh` | the camera or the story jumps to a new place or time | every scene change (it becomes a metronome) |
-| `pop` | a number, label or chip appears on screen | words that are only spoken |
-| `tick` | counting up or down on screen (days, years, items) | background rhythm |
-| `boom` | the turn: the fact that flips the story | the hook's first second, before anything is at stake |
-| `ding` | the answer lands, the payoff | ordinary facts |
-| `riser` | the half second before a reveal | anything that is not followed by a reveal |
-| `glitch` | something is wrong: a myth, a broken record, a map error | a real tragedy |
-| `drop` | a plan fails, a hope is refused | deaths and disasters (see "tone" below) |
+| id | Use it when | Do not use it for | Length |
+|---|---|---|---|
+| [`boom`](boom.md) | the turn: the fact that flips the story | the hook's first second, before anything is at stake | 1.65 s |
+| [`ding`](ding.md) | the answer lands, the payoff | ordinary facts | 1.65 s |
+| [`drop`](drop.md) | a plan fails, a hope is refused | deaths and disasters (see the tone rule in README) | 0.5 s |
+| [`glitch`](glitch.md) | something is wrong: a myth, a broken record, a map error | a real tragedy | 0.65 s |
+| [`pop`](pop.md) | a number, label or chip appears on screen | words that are only spoken | 0.23 s |
+| [`riser`](riser.md) | the half second before a reveal | anything that is not followed by a reveal | 2.05 s |
+| [`tick`](tick.md) | counting up or down on screen (days, years, items) | background rhythm | 0.11 s |
+| [`whoosh`](whoosh.md) | the camera or the story jumps to a new place or time | every scene change (it becomes a metronome) | 0.85 s |
+
+Each effect is a card here (`<id>.md`) whose front matter is the one place its file, length, gain, loudness,
+licence, use and pairings are written. `bun run check` fails when `src/shared/audio/Sfx.tsx` disagrees with a card,
+so the code, this table and the cards cannot drift apart. A file of your own (`src` in a cue) gets a card too:
+copy one, set `file`, `loudness` and `licence`.
 
 ## How to cue an effect
 
@@ -115,3 +128,6 @@ Licensed alternatives: Pixabay Sound Effects, freesound.org filtered to CC0, or 
 - [ ] No cue sits on top of a sentence, the strong word or a death toll
 - [ ] Every custom file is measured, has a gain, and has a licence record
 - [ ] Listened to the render once with effects and once muted: the video still works without them
+
+For a promo (a film led by picture and music rather than voice): the method, the five sound rules
+and how to source and pin third-party effects are in [`docs/promo/sound.md`](../../promo/sound.md).

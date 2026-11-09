@@ -6,7 +6,7 @@ import {DrawPath, MarkLayer, smoothPath, wobbleLine} from "./rough";
 /**
  * A red X drawn at the exact spot that is wrong: the myth on a poster, the
  * error on a map. Two strokes, the second a beat after the first. Pairs with
- * `glitch` or `drop` (docs/sfx.md), never with a real tragedy.
+ * `glitch` or `drop` (docs/shots/sfx/), never with a real tragedy.
  */
 export const CrossOut: React.FC<{
   /** Box to cross out, in frame pixels. */

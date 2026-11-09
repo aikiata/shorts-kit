@@ -8,7 +8,7 @@ import {PANEL_LEFT, PANEL_MAX_W, STAGE_TOP} from "../frame/SafeZones";
 /**
  * One word hits the frame: drops from large, lands with a shake and a shock
  * ring. Reserve it for the punch (the turn, the number nobody expected); a
- * slam on every scene is a metronome. Pairs with the `boom` effect (docs/sfx.md).
+ * slam on every scene is a metronome. Pairs with the `boom` effect (docs/shots/sfx/boom.md).
  */
 export const WordSlam: React.FC<{
   word: string;

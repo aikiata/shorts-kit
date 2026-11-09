@@ -7,7 +7,7 @@ import {scenes} from "./scenes";
 import {FPS, OUTRO_HOLD, VOICE} from "./timing";
 import {World} from "./World";
 
-/** Cue a sound on the word that earns it; `frameAtWord` throws if the word leaves the script (docs/sfx.md). */
+/** Cue a sound on the word that earns it; `frameAtWord` throws if the word leaves the script (docs/shots/sfx/). */
 const cue = (scene: string, word: string, nth?: number) => frameAtWord(VOICE, FPS, scene, word, nth);
 
 /** Two accents: `pop` when the blue wave's label appears, `ding` when the payoff lands. */

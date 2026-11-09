@@ -1,0 +1,343 @@
+// outro-group-photo-launch: elements from the whole piece fly in from all four sides to surround the wordmark for a group photo, crane drops into position + stage light +
+// gold dust make it a launch-event close. Outro / brand sign-off, a "family portrait" final shot of a multi-feature product, energy pushed to the highest of the whole piece.
+// The reference implementation is stripped from the template SceneOutroLive (self-contained):
+// 9 page elements fly in from four sides with rotation (from cue 4, one every 3f, 12f flight, bezier y1>1 for real overshoot,
+// render order = cue order, later ones stack on top), accent-color glow on landing (0.35→0); the wordmark letterpress enters letter by letter
+// (delay=42+i·1.8) and everyone steps back to the back row (opacity −12% / saturate −8%); the rule grows + a
+// 190px extension line shoots out; crane move perspective rotateX(4°→0) + scale, then a slow push after landing;
+// launch-event trio: opening light band sweeps across, stage light behind the wordmark, 20 deterministic gold dust particles float up; the background page is blurred
+// for depth of field; sign-off hold 30f after settling. The outro has no narration caption, to stay clean.
+// Brand round: wordmark = shorts-kit "Jingke" mark + all-lowercase wordmark (brand font), the mark and letters use the same letterpress
+// entrance (mark presses first by 4f); the eyebrow line below is swapped for the brand tagline. The background page / group photo elements are real screenshot textures, text inside them is kept.
+import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, Easing } from 'remotion';
+import { PageCam2D } from '../../../shared/fixtures/PageCam2D';
+import { EASE, Grain, SpeedBlur, ramp, velocity } from '../../../shared/fixtures/Polish';
+import layout from '../../../shared/fixtures/live-layout.json';
+import { BRAND, PITCH, ShortKitMark } from '../../../shared/fixtures/Brand';
+
+export const OUTRO_GROUP_PHOTO_LAUNCH_DURATION = 145;
+
+const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace';
+const LETTERS = BRAND.name.split('');
+const PAGE_H = layout.projects.pageH;
+const WBR_PAGE_H = layout.wbr.pageH;
+
+const FLY_EASE = Easing.bezier(0.34, 1.4, 0.44, 1);
+const CRANE_EASE = Easing.bezier(0.3, 0, 0.2, 1);
+
+type FlyEl = {
+  key: string;
+  file: string;
+  w: number;
+  h: number;
+  cx: number;
+  cy: number;
+  scale: number;
+  rot: number;
+  dx: number;
+  dy: number;
+  radius: number;
+  cue: number;
+  wbrCrop?: boolean;
+};
+
+// render order = cue order, so later arrivals stack on top
+const ELS: FlyEl[] = [
+  { key: 'nav', file: 'nav.png', w: 1920, h: 61, cx: 960, cy: 84, scale: 0.62, rot: 0, dx: 0, dy: -120, radius: 10, cue: 4 },
+  { key: 'card4', file: 'card4-hires.png', w: 358, h: 312, cx: 280, cy: 300, scale: 0.72, rot: -5, dx: -500, dy: 0, radius: 16, cue: 7 },
+  { key: 'card1', file: 'card1.png', w: 358, h: 288, cx: 1640, cy: 318, scale: 0.68, rot: 4, dx: 500, dy: 0, radius: 16, cue: 10 },
+  { key: 'paper1', file: 'paper1.png', w: 1104, h: 225, cx: 1460, cy: 730, scale: 0.5, rot: -3, dx: 450, dy: 260, radius: 12, cue: 13 },
+  { key: 'card7', file: 'card7.png', w: 358, h: 312, cx: 260, cy: 800, scale: 0.6, rot: 3, dx: -400, dy: 300, radius: 16, cue: 16 },
+  { key: 'paper3', file: 'paper3.png', w: 1104, h: 225, cx: 620, cy: 930, scale: 0.48, rot: 2, dx: 0, dy: 320, radius: 12, cue: 19 },
+  { key: 'search', file: 'float-search.png', w: 1016, h: 44, cx: 760, cy: 180, scale: 0.55, rot: -1.5, dx: 0, dy: -240, radius: 10, cue: 22 },
+  { key: 'stats', file: 'float-stats.png', w: 315, h: 56, cx: 1560, cy: 950, scale: 0.9, rot: -2, dx: 380, dy: 0, radius: 10, cue: 25 },
+  { key: 'wbr', file: 'wbr-full.png', w: 688, h: 54, cx: 1620, cy: 170, scale: 0.8, rot: 2.5, dx: 360, dy: -200, radius: 8, cue: 28, wbrCrop: true },
+];
+
+// 20 gold dust motes, all parameters index-derived (deterministic)
+// Texture: each particle has a warm halo (so the "gold" is visible on a bright field), plus 6 out-of-focus foreground bokeh blobs for a depth layer
+const DUST = Array.from({ length: 20 }, (_, i) => ({
+  x: (i * 439 + 137) % 1920,
+  y0: (i * 613 + 271) % 1080,
+  rise: 0.3 + (i % 5) * 0.11,
+  swayAmp: 9 + (i % 4) * 5,
+  swayFreq: 0.022 + (i % 3) * 0.008,
+  phase: (i * 0.83) % (Math.PI * 2),
+  size: 2.4 + (i % 3) * 0.9,
+  opacity: 0.35 + ((i * 7) % 5) * 0.09,
+}));
+const BOKEH = Array.from({ length: 6 }, (_, i) => ({
+  x: (i * 701 + 260) % 1920,
+  y0: (i * 389 + 640) % 1080,
+  rise: 0.55 + (i % 3) * 0.2,
+  size: 14 + (i % 3) * 7,
+  opacity: 0.1 + (i % 2) * 0.06,
+}));
+
+export const OutroGroupPhotoLaunch: React.FC = () => {
+  const frame = useCurrentFrame();
+  const duration = OUTRO_GROUP_PHOTO_LAUNCH_DURATION;
+
+  const blur = interpolate(frame, [0, 24], [0, 14], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.4, 0, 0.4, 1),
+  });
+  const rule = interpolate(frame, [58, 70], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.3, 0, 0.2, 1),
+  });
+  const tag = ramp(frame, 68, 12, EASE.out);
+  // Closing fade to a warm ink color (explicit base color, no fade to transparent), ease-in: "lights out" slow first then fast
+  const fadeOut = 1 - ramp(frame, duration - 12, 11, EASE.exit); // The last frame is exactly fully dark, so the held end frame is clean
+  const recede = interpolate(frame, [42, 50], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+  });
+
+  // crane on the whole group-photo layer
+  const craneT = interpolate(frame, [0, 40], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: CRANE_EASE,
+  });
+  // The slow push starts from zero speed (joins the decelerating end of the crane, avoids a speed jump at f40)
+  const pushT = ramp(frame, 36, duration - 36, EASE.smooth);
+  const camScale = 1.06 - 0.06 * craneT + 0.035 * pushT;
+  const camTilt = 4 * (1 - craneT);
+
+  // opening light sweep
+  const sweepX = interpolate(frame, [2, 14], [-700, 2020], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.4, 0, 0.6, 1),
+  });
+  const sweepOpacity = interpolate(frame, [2, 5, 11, 14], [0, 0.12, 0.12, 0], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+  });
+
+  // stage light behind the wordmark
+  const stageLight = interpolate(frame, [42, 50, 58], [0, 0.55, 0.32], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+  });
+  const vignette = interpolate(frame, [42, 54], [0, 0.1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+  });
+
+  // rule extension lines
+  const ruleExt = interpolate(frame, [58, 66], [0, 1], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.3, 0, 0.2, 1),
+  });
+  const ruleExtFade = interpolate(frame, [66, 72], [1, 0], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+  });
+
+  // one breath of letter-spacing once the wordmark is fully set
+  const wordSpacing = interpolate(frame, [62, 66], [-0.01, 0.005], {
+    extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.3, 0, 0.2, 1),
+  });
+
+  return (
+    <AbsoluteFill style={{ background: '#0f0d0a' }}>
+    <AbsoluteFill style={{ opacity: fadeOut }}>
+      {/* group-photo layer under a slow crane-in camera */}
+      <AbsoluteFill
+        style={{
+          transform: `perspective(1400px) rotateX(${camTilt}deg) scale(${camScale})`,
+          transformOrigin: '50% 45%',
+        }}
+      >
+        {/* blur applies only to the background page: PageCam2D is self-closing, the flying-in elements sit in an unfiltered sibling layer
+            (screen-space coordinates, same structure as the template SceneOutroLive); putting them in children
+            would blur the "group photo elements" too, leaving only the wordmark sharp */}
+        <PageCam2D src="textures/live/projects-full.png" pageH={PAGE_H} keys={[{ frame: 0, cx: 960, cy: 700, zoom: 0.75 }]} blur={blur} />
+        {/* warm scrim under the flying elements */}
+        <AbsoluteFill style={{ background: 'radial-gradient(1200px 800px at 50% 48%, rgba(250,247,242,0.82), rgba(250,247,242,0.55) 60%, rgba(250,247,242,0.35))', pointerEvents: 'none' }} />
+
+        {/* group photo: elements fly in from all sides and settle around the wordmark */}
+        <AbsoluteFill style={{ pointerEvents: 'none' }}>
+          {ELS.map((el) => {
+            if (frame < el.cue) return null;
+            const t = interpolate(frame, [el.cue, el.cue + 12], [0, 1], {
+              extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: FLY_EASE,
+            });
+            const opacity = interpolate(frame, [el.cue, el.cue + 3], [0, 1], {
+              extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+            });
+            const x = el.dx * (1 - t);
+            const y = el.dy * (1 - t);
+            const rot = el.rot * (2 - t);
+            const scale = el.scale * (1.12 - 0.12 * t);
+            const air = Math.max(0, 1 - t);
+            const shadow =
+              air > 0.01
+                ? `0 ${10 + 26 * air}px ${24 + 46 * air}px rgba(30,25,18,${0.16 + 0.1 * air}), 0 2px 6px rgba(30,25,18,.08)`
+                : '0 10px 24px rgba(30,25,18,.16), 0 2px 6px rgba(30,25,18,.08)';
+            const settledOpacity = opacity * (1 - 0.12 * recede);
+            const saturate = 1 - 0.08 * recede;
+            const texture = el.wbrCrop
+              ? {
+                  background: `#fff url(${staticFile(`textures/live/${el.file}`)}) -576px -173px / 1920px ${WBR_PAGE_H}px no-repeat`,
+                  border: '1px solid oklch(90% .008 82)',
+                }
+              : null;
+            // Directional motion blur: ghost trail along the flight direction by screen speed (px/frame), 0 after landing (replaces the lagging ghost afterimage)
+            const posAt = (fr: number) => {
+              const tt = interpolate(fr, [el.cue, el.cue + 12], [0, 1], {
+                extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: FLY_EASE,
+              });
+              return [el.dx * (1 - tt), el.dy * (1 - tt)];
+            };
+            const vx = velocity((fr) => posAt(fr)[0], frame);
+            const vy = velocity((fr) => posAt(fr)[1], frame);
+            // Landing compaction: in the 4f of overshoot settle, the contact shadow tightens and the element presses down 1.5%
+            const land = interpolate(frame, [el.cue + 9, el.cue + 12, el.cue + 16], [0, 1, 0], {
+              extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+            });
+
+            return (
+              <SpeedBlur key={el.key} vx={vx} vy={vy} amount={0.3} max={22}>
+                <div
+                  style={{
+                    position: 'absolute', left: el.cx - el.w / 2, top: el.cy - el.h / 2,
+                    width: el.w, height: el.h,
+                    transform: `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${scale * (1 - 0.015 * land)})`,
+                    transformOrigin: 'center center', borderRadius: el.radius, overflow: 'hidden',
+                    boxShadow: land > 0.01 ? `0 ${10 - 5 * land}px ${24 - 12 * land}px rgba(30,25,18,${0.16 + 0.06 * land}), 0 2px 6px rgba(30,25,18,${0.08 + 0.06 * land})` : shadow,
+                    opacity: settledOpacity, filter: `saturate(${saturate})`, ...texture,
+                  }}
+                >
+                  {el.wbrCrop ? null : (
+                    <Img src={staticFile(`textures/live/${el.file}`)} style={{ position: 'absolute', inset: 0, width: el.w, height: el.h, display: 'block' }} />
+                  )}
+                </div>
+              </SpeedBlur>
+            );
+          })}
+        </AbsoluteFill>
+      </AbsoluteFill>
+
+      {/* gold dust drifting up in front of the group photo */}
+      <AbsoluteFill style={{ pointerEvents: 'none' }}>
+        {DUST.map((d, i) => {
+          const y = (((d.y0 - frame * d.rise) % 1080) + 1080) % 1080;
+          const x = d.x + Math.sin(frame * d.swayFreq + d.phase) * d.swayAmp;
+          const twinkle = 0.7 + 0.3 * Math.sin(frame * 0.21 + d.phase * 3);
+          return (
+            <div
+              key={i}
+              style={{
+                position: 'absolute', left: x, top: y, width: d.size, height: d.size,
+                borderRadius: '50%', background: 'oklch(78% 0.085 80)', opacity: d.opacity * twinkle,
+                boxShadow: `0 0 ${d.size * 2.5}px ${d.size * 0.6}px oklch(84% 0.08 82 / 0.6)`,
+              }}
+            />
+          );
+        })}
+        {/* Foreground out-of-focus blobs: large and soft, float up faster, in front of the group photo for depth of field */}
+        {BOKEH.map((b, i) => {
+          const y = (((b.y0 - frame * b.rise) % 1180) + 1180) % 1180 - 50;
+          return (
+            <div
+              key={`b${i}`}
+              style={{
+                position: 'absolute', left: b.x, top: y, width: b.size, height: b.size, borderRadius: '50%',
+                background: 'radial-gradient(circle, oklch(86% 0.1 82 / 0.9) 0%, oklch(86% 0.1 82 / 0.35) 55%, oklch(86% 0.1 82 / 0) 72%)',
+                opacity: b.opacity, filter: 'blur(2px)',
+              }}
+            />
+          );
+        })}
+      </AbsoluteFill>
+
+      {/* opening light sweep */}
+      {sweepOpacity > 0 ? (
+        <AbsoluteFill style={{ pointerEvents: 'none', mixBlendMode: 'overlay' }}>
+          <div
+            style={{
+              position: 'absolute', top: 0, bottom: 0, left: sweepX - 300, width: 600,
+              background: 'linear-gradient(90deg, rgba(255,244,224,0), rgba(255,244,224,1) 50%, rgba(255,244,224,0))',
+              opacity: sweepOpacity,
+            }}
+          />
+        </AbsoluteFill>
+      ) : null}
+
+      {/* stage light behind the wordmark */}
+      {stageLight > 0 ? (
+        <AbsoluteFill
+          style={{
+            pointerEvents: 'none',
+            background: 'radial-gradient(700px 360px at 960px 470px, rgba(255,246,228,0.95), rgba(255,246,228,0.35) 55%, rgba(255,246,228,0) 75%)',
+            opacity: stageLight,
+          }}
+        />
+      ) : null}
+
+      {/* closing vignette */}
+      {vignette > 0 ? (
+        <AbsoluteFill
+          style={{
+            pointerEvents: 'none',
+            background: 'radial-gradient(1400px 900px at 50% 50%, rgba(62,48,32,0) 55%, rgba(62,48,32,0.7) 100%)',
+            opacity: vignette,
+          }}
+        />
+      ) : null}
+
+      {/* wordmark sign-off */}
+      <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', pointerEvents: 'none' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontFamily: BRAND.font, fontSize: 118, fontWeight: 700, lineHeight: 1.18, color: BRAND.ink, letterSpacing: `${0.03 + wordSpacing}em`, display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            // letterpress: 1px paper-surface highlight on the lower edge + a very soft ambient shadow, so the wordmark is "pressed" onto the group photo instead of floating on paper
+            textShadow: '0 1px 0 rgba(255,253,248,0.75), 0 14px 36px rgba(60,44,24,0.14)',
+          }}>
+            {(() => {
+              // Mark presses first: 4f before the first letter, same letterpress (lift + enlarge + defocus → settle)
+              const t = interpolate(frame, [38, 46], [0, 1], {
+                extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.2, 0.75, 0.3, 1),
+              });
+              return (
+                <div style={{
+                  marginRight: 36, opacity: t, transform: `translateY(${(1 - t) * 28}px) scale(${1.35 - 0.35 * t})`,
+                  filter: t < 0.995 ? `blur(${(1 - t) * 8}px)` : undefined,
+                }}>
+                  <ShortKitMark size={154} tone="light" />
+                </div>
+              );
+            })()}
+            {LETTERS.map((ch, i) => {
+              const delay = Math.round(42 + i * 1.8);
+              const t = interpolate(frame, [delay, delay + 8], [0, 1], {
+                extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.2, 0.75, 0.3, 1),
+              });
+              return (
+                <span
+                  key={i}
+                  style={{
+                    opacity: t, transform: `translateY(${(1 - t) * 28}px) scale(${1.35 - 0.35 * t})`,
+                    filter: `blur(${(1 - t) * 8}px)`, display: 'inline-block', whiteSpace: 'pre',
+                  }}
+                >
+                  {ch}
+                </span>
+              );
+            })}
+          </div>
+          <div style={{ position: 'relative', height: 6, width: 260, margin: '34px auto 0' }}>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 3, background: 'oklch(52% 0.115 65)', transform: `scaleX(${rule})` }} />
+            {ruleExt > 0 && ruleExtFade > 0 ? (
+              <>
+                <div style={{ position: 'absolute', top: 2.5, height: 1, right: '100%', width: 190 * ruleExt, background: 'oklch(52% 0.115 65)', opacity: ruleExtFade }} />
+                <div style={{ position: 'absolute', top: 2.5, height: 1, left: '100%', width: 190 * ruleExt, background: 'oklch(52% 0.115 65)', opacity: ruleExtFade }} />
+              </>
+            ) : null}
+          </div>
+          <div style={{
+            fontFamily: MONO, fontSize: 32, letterSpacing: '0.16em', color: 'oklch(42% 0.008 82)', marginTop: 30, textTransform: 'uppercase',
+            opacity: tag, transform: `translateY(${(1 - tag) * 6}px)`,
+          }}>
+            {PITCH.en.motto}
+          </div>
+        </div>
+      </AbsoluteFill>
+      {/* Very faint film grain: large cream paper area, prevents banding */}
+      <Grain opacity={0.045} />
+    </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
