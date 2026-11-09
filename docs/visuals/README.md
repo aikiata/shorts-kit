@@ -22,6 +22,7 @@ combination in `narration.json` → `visual`, using the ids below. An empty list
 | `satellite-map` | §5h | [`satellite-map.md`](satellite-map.md) | real ground from satellite or vector data; the camera flies, facts are drawn on it |
 | `globe` | §5i | [`globe.md`](globe.md) | the planet: great-circle lines, distances, the pull-out from a scene to Earth |
 | `talking-head` | §5j | [`talking-head.md`](talking-head.md) | a filmed take is the voice; Whisper, reasoned cuts, effects off the face |
+| `3d-explainer` | §5k | [`3d-explainer.md`](3d-explainer.md) | one low-poly 3D world, a moving camera, chapter HUD, labels pinned to objects |
 
 ## Choosing
 
@@ -38,6 +39,7 @@ For each claim in the brief, ask "what is on screen while this is said?"
 | a person, a place, time passing, with nothing licensed to show | `illustrated-scene` |
 | a distance, a route, a border, a coastline, a place on the ground | `satellite-map` |
 | two places far apart, a journey across oceans, the scale of a trip | `globe` |
+| a mechanism or an event with no usable photo or footage, told in chapters | `3d-explainer` |
 | the owner on camera: a reaction, a demo in the hand, a face the audience follows | `talking-head` |
 
 If a claim fits none, the topic is not buildable yet. Check licences at this moment.
@@ -70,4 +72,4 @@ one follows a §5 rule in code; read the rule before using it.
 | `chart/Odometer` | a year or counter rolling from A to B | the roll shows how far the number travels |
 | `frame/PipShot` | talking-head: the speaker in a corner box (card or circle), a globe, map or card behind | only for the words it illustrates; content text below the box |
 
-Cue every `at` from a word of the narration (`frameAtWord`, docs/sfx.md), never a typed frame number.
+Cue every `at` from a word of the narration (`frameAtWord`, docs/shots/sfx/), never a typed frame number.
