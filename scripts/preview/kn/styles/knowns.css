@@ -1,0 +1,183 @@
+/* Keyframes used by Knowns UI components (also shipped through registry.json "css"). */
+
+/* Motion tokens: the one set of easings and durations every component uses (see .claude/skills/kn-motion).
+   ease-out for anything that enters, leaves, opens or closes; ease-inout for something already on screen that
+   moves or resizes; ease-in only for an element that accelerates away off screen. Components read them with a
+   fallback, e.g. var(--kn-ease-out, cubic-bezier(.22, 1, .36, 1)), so they still work without this file. Components name them explicitly (ease-(--kn-ease-out) duration-(--kn-dur));
+   nothing here changes Tailwind's own transition defaults. */
+:root {
+  --kn-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --kn-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --kn-ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --kn-dur-fast: 120ms;
+  --kn-dur: 180ms;
+  --kn-dur-slow: 280ms;
+}
+
+@keyframes kn-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--hue, currentColor) 16%, transparent);
+  }
+}
+
+@keyframes kn-rise {
+  from {
+    transform: translateY(6px);
+  }
+}
+
+
+@keyframes kn-shimmer {
+  to {
+    transform: translateX(300%);
+  }
+}
+
+/* AI Answer: words fade in out of a light blur; citation chips pop in. */
+@keyframes kn-word {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+@keyframes kn-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+/* Exits mirror the enters, in the same direction: kn-fall undoes kn-rise, kn-fade-out undoes a fade in. */
+@keyframes kn-fall {
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes kn-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: every Knowns animation and transition (any element whose class mentions kn-, or that a motion
+   helper marks) finishes at once and runs once. State still changes; it just does not travel. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="kn-"],
+  [class*="kn-"]::before,
+  [class*="kn-"]::after,
+  [data-kn-m],
+  [data-kn-m] * {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* Scroll areas: thin, theme-aware scrollbars on a transparent track.
+   kn-scroll: always visible, low contrast. kn-scroll-auto: fainter until hover or focus, with a
+   stable gutter (sidebars, long panels). kn-scroll-fade-x: soft edge fade on horizontal scrollers
+   that follows the scroll position; the scrollbar strip itself is never faded. Set
+   --kn-fade-inset-l to the width of a sticky first column so the left fade starts after it. */
+.kn-scroll,
+.kn-scroll-auto {
+  --kn-thumb: color-mix(in oklch, var(--foreground) 22%, transparent);
+  --kn-thumb-hover: color-mix(in oklch, var(--foreground) 38%, transparent);
+}
+.kn-scroll-auto {
+  --kn-thumb: color-mix(in oklch, var(--foreground) 9%, transparent);
+  scrollbar-gutter: stable;
+}
+.kn-scroll-auto:hover,
+.kn-scroll-auto:focus-within {
+  --kn-thumb: color-mix(in oklch, var(--foreground) 22%, transparent);
+}
+.kn-scroll::-webkit-scrollbar,
+.kn-scroll-auto::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.kn-scroll::-webkit-scrollbar-track,
+.kn-scroll::-webkit-scrollbar-corner,
+.kn-scroll-auto::-webkit-scrollbar-track,
+.kn-scroll-auto::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.kn-scroll::-webkit-scrollbar-thumb,
+.kn-scroll-auto::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--kn-thumb) padding-box;
+}
+.kn-scroll-auto:hover::-webkit-scrollbar-thumb,
+.kn-scroll-auto:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--foreground) 22%, transparent);
+}
+.kn-scroll::-webkit-scrollbar-thumb:hover,
+.kn-scroll-auto::-webkit-scrollbar-thumb:hover {
+  background-color: var(--kn-thumb-hover);
+}
+@supports not selector(::-webkit-scrollbar) {
+  .kn-scroll,
+  .kn-scroll-auto {
+    scrollbar-width: thin;
+    scrollbar-color: var(--kn-thumb) transparent;
+  }
+}
+
+@property --kn-fade-l {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --kn-fade-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.kn-scroll-fade-x {
+  mask-image:
+    linear-gradient(
+      to right,
+      #000 var(--kn-fade-inset-l, 0px),
+      transparent var(--kn-fade-inset-l, 0px),
+      #000 calc(var(--kn-fade-inset-l, 0px) + var(--kn-fade-l)),
+      #000 calc(100% - var(--kn-fade-r)),
+      transparent
+    ),
+    linear-gradient(#000, #000);
+  mask-size:
+    100% calc(100% - 10px),
+    100% 10px;
+  mask-position: top, bottom;
+  mask-repeat: no-repeat;
+}
+@supports (animation-timeline: scroll()) {
+  .kn-scroll-fade-x {
+    animation: kn-fade-x linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+@keyframes kn-fade-x {
+  0% {
+    --kn-fade-l: 0px;
+    --kn-fade-r: 28px;
+  }
+  6%,
+  94% {
+    --kn-fade-l: 28px;
+    --kn-fade-r: 28px;
+  }
+  100% {
+    --kn-fade-l: 28px;
+    --kn-fade-r: 0px;
+  }
+}

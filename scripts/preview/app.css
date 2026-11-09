@@ -1,41 +1,82 @@
-/* shorts-kit preview: Tailwind v4 + the Untitled UI theme tokens (ui/theme.css, MIT). */
+/* shorts-kit preview, in Knowns UI (https://ui.knowns.dev, MIT): its components live in ./kn/, copied from the
+   registry with imports made relative. Tailwind v4 + the kit's shadcn tokens, dark only. */
 @import "tailwindcss";
-@import "./ui/theme.css";
-
-/* Brand = the kit's caption accent (#3FD0FF in src/shared/theme.ts), so the
-   dashboard and the videos share one colour instead of Untitled UI's default purple. */
-@theme {
-    --color-brand-25: rgb(245 253 255);
-    --color-brand-50: rgb(236 251 255);
-    --color-brand-100: rgb(211 245 255);
-    --color-brand-200: rgb(173 233 255);
-    --color-brand-300: rgb(127 220 255);
-    --color-brand-400: rgb(63 208 255);
-    --color-brand-500: rgb(21 184 238);
-    --color-brand-600: rgb(8 150 200);
-    --color-brand-700: rgb(10 119 161);
-    --color-brand-800: rgb(15 97 132);
-    --color-brand-900: rgb(18 80 109);
-    --color-brand-950: rgb(8 52 73);
-}
-
-@plugin "tailwindcss-react-aria-components";
-@plugin "tailwindcss-animate";
+@import "./kn/styles/knowns.css";
 
 @source "./";
 
-@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+/* Dark mode follows a .dark class on an ancestor, as in shadcn projects. */
+@custom-variant dark (&:is(.dark *));
 
-@utility transition-inherit-all {
-    transition-property: inherit;
-    transition-duration: inherit;
-    transition-timing-function: inherit;
+@theme {
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: var(--kn-ease-out);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-html,
-body {
-    font-family: var(--font-body);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* shadcn/ui neutral tokens, the ones Knowns UI is built on. */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.52 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.185 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
     min-height: 100%;
+  }
 }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: color-mix(in oklch, var(--foreground) 22%, transparent) padding-box; }

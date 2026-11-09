@@ -18,6 +18,8 @@
 import {existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync, type Stats} from "node:fs";
 import {join, resolve, sep} from "node:path";
 import {randomBytes, timingSafeEqual} from "node:crypto";
+import {FORMATS} from "../src/shared/format";
+import {linePlaysIn, MASTER, promoProblems, promoSeconds, promoTimings, voiceLineFrame, type Promo} from "../src/shared/promo";
 
 const REPO = resolve(import.meta.dir, "..");
 const UI = join(REPO, "scripts", "preview");
@@ -199,9 +201,10 @@ const moovFirst = async (file: string): Promise<boolean | null> => {
   return null;
 };
 
-const probe = async (file: string, rel: string): Promise<ProbeSummary> => {
+const probe = async (file: string, rel: string, size: {w: number; h: number}): Promise<ProbeSummary> => {
+  rel = rel || file;
   const st = stat(file)!;
-  const key = `${rel}:${st.mtimeMs}:${st.size}`;
+  const key = `${rel}:${st.mtimeMs}:${st.size}:${size.w}x${size.h}`;
   if (probeCache[key]) return probeCache[key];
   const base = {file: rel, size: st.size, mtime: st.mtimeMs};
   const r = await runCmd(["ffprobe", "-v", "error", "-print_format", "json", "-show_format", "-show_streams", file], 20_000);
@@ -229,7 +232,7 @@ const probe = async (file: string, rel: string): Promise<ProbeSummary> => {
   const ck = (name: string, value: unknown, want: string, ok: boolean): Check => ({name, ok, value: String(value ?? "missing"), want});
   const checks: Check[] = [
     ck("video codec", v?.codec_name, "h264", v?.codec_name === "h264"),
-    ck("size", v ? `${v.width}×${v.height}` : null, "1080×1920", v?.width === 1080 && v?.height === 1920),
+    ck("size", v ? `${v.width}×${v.height}` : null, `${size.w}×${size.h}`, v?.width === size.w && v?.height === size.h),
     ck("pix_fmt", v?.pix_fmt, "yuv420p", v?.pix_fmt === "yuv420p"),
     ck("color range", v?.color_range, "tv", v?.color_range === "tv"),
     ck("primaries", v?.color_primaries, "bt709", v?.color_primaries === "bt709"),
@@ -301,8 +304,67 @@ const factIds = (n: Narration) => {
   return [...ids];
 };
 
+/** video.json, read without exiting the server on a bad value: absent or invalid means a 9:16 short. */
+type Orientation = "portrait" | "landscape";
+const metaOf = (id: string): {format: Orientation; mode: "short" | "promo"} => {
+  const r = readJson<{format?: string; mode?: string}>(join(ROOT, "src", "videos", id, "video.json"));
+  const format = r.value?.format === "landscape" ? "landscape" : "portrait";
+  const mode = r.value?.mode === "promo" ? "promo" : "short";
+  return {format, mode};
+};
+const sizeOf = (id: string) => FORMATS[metaOf(id).format];
+
+/** Every upload-ready file of a video: the master `<id>-upload.mp4` and each cut `<id>-<len>s-<format>-upload.mp4` (promo rule 15). */
+const UPLOAD_RE = /^[A-Za-z0-9._-]+-upload\.mp4$/;
+const deliverables = (id: string, format: Orientation) => {
+  let names: string[] = [];
+  try {
+    names = readdirSync(out(id)).filter((f) => UPLOAD_RE.test(f));
+  } catch {
+    /* no out/<id>/ yet */
+  }
+  return names
+    .map((name) => {
+      const f = fileInfo(out(id, name))!;
+      const m = /-(\d+)s-(portrait|landscape)-upload\.mp4$/.exec(name);
+      const master = name === `${id}-upload.mp4`;
+      return {name, file: f, master, seconds: m ? Number(m[1]) : null, format: (m?.[2] as Orientation | undefined) ?? format, label: master ? "master" : m ? `${m[1]} s cut` : name.replace(/-upload\.mp4$/, "")};
+    })
+    .filter((d) => d.file)
+    .sort((a, b) => Number(b.master) - Number(a.master) || (b.seconds ?? 0) - (a.seconds ?? 0));
+};
+
+/** promo.json summarised for the UI: the clock, the music and the spoken lines (docs/promo/). */
+type VoiceLineRec = {id: string; text: string; file: string; seconds: number};
+const promoState = (id: string) => {
+  const dir = join(ROOT, "src", "videos", id);
+  const r = readJson<Promo>(join(dir, "promo.json"));
+  if (r.error) return {error: `promo.json is not valid JSON: ${r.error}`};
+  if (!r.value) return null;
+  const promo = r.value;
+  const problems = promoProblems(promo);
+  if (problems.length) return {error: problems.join("; ")};
+  const fps = 30;
+  const timings = promoTimings(promo, fps);
+  const recs = readJson<VoiceLineRec[]>(join(dir, "voice-lines.json")).value ?? [];
+  const musicAbs = promo.music?.src ? join(ROOT, "public", promo.music.src) : null;
+  return {
+    bpm: promo.bpm ?? null,
+    seconds: promoSeconds(promo),
+    scenes: timings.map((s, i) => ({id: s.id, start: s.from / fps, end: (s.from + s.duration) / fps, beats: promo.scenes[i].beats ?? null})),
+    music: promo.music ? {src: promo.music.src, file: musicAbs && isFile(musicAbs) ? fileInfo(musicAbs) : null} : null,
+    lines: (promo.voice?.lines ?? []).map((l) => {
+      const rec = recs.find((x) => x.id === l.id);
+      const abs = rec ? join(ROOT, "public", rec.file) : null;
+      return {id: l.id, text: l.text, scene: l.scene, at: voiceLineFrame(promo, fps, l) / fps, seconds: rec?.seconds ?? null, stale: !!rec && rec.text !== l.text, audio: abs && isFile(abs) ? fileInfo(abs) : null, only: linePlaysIn(l, MASTER) ? null : (l.only ?? [])};
+    }),
+  };
+};
+
 const STEP_META: Record<string, {n: number; label: string; skill: string; command: (id: string) => string}> = {
-  brief: {n: 4, label: "Brief", skill: "sk-brief", command: (id) => `cp briefs/_template.md briefs/${id}.md   # then fill it in (sk-brief)`},
+  brief: {n: 4, label: "Brief", skill: "sk-brief", command: (id) => `cp briefs/${metaOf(id).mode === "promo" ? "_template-promo" : "_template"}.md briefs/${id}.md   # then fill it in (${metaOf(id).mode === "promo" ? "sk-promo" : "sk-brief"})`},
+  clock: {n: 5, label: "Clock", skill: "sk-promo", command: (id) => `edit src/videos/${id}/promo.json   # scenes in beats or seconds, measured bpm (bun run beats <music>)`},
+  voicelines: {n: 6, label: "Voice", skill: "sk-promo", command: (id) => `bun run voice ${id}`},
   facts: {n: 2, label: "Facts", skill: "sk-facts", command: () => "bun run facts"},
   narration: {n: 5, label: "Narration", skill: "sk-narration", command: (id) => `edit src/videos/${id}/narration.json   # sk-narration`},
   tts: {n: 6, label: "TTS", skill: "sk-narration", command: (id) => `bun run tts ${id}`},
@@ -401,11 +463,31 @@ const videoState = (id: string) => {
     steps.push({key, n: m.n, label: m.label, status, detail, command: m.command(id), skill: m.skill});
   };
 
+  const meta = metaOf(id);
+  const promoOnly = meta.mode === "promo" && !n;
+  const promo = meta.mode === "promo" ? promoState(id) : null;
+
   // 1–4 brief (idea + flow live in it)
   add("brief", isFile(join(ROOT, "briefs", `${id}.md`)) ? "done" : "todo", isFile(join(ROOT, "briefs", `${id}.md`)) ? `briefs/${id}.md` : `no briefs/${id}.md`);
 
+  if (promoOnly) {
+    // a promo with no voice-over: promo.json is the clock, a few lines come from `bun run voice` (docs/promo/)
+    if (!promo) add("clock", "todo", `no src/videos/${id}/promo.json`);
+    else if ("error" in promo) add("clock", "fail", promo.error!);
+    else add("clock", "done", `${promo.scenes.length} scenes, ${promo.seconds.toFixed(1)} s${promo.bpm ? `, ${promo.bpm} BPM` : ""}${promo.music && !promo.music.file ? ` · music missing: public/${promo.music.src}` : ""}`);
+    if (promo && !("error" in promo) && promo.lines.length) {
+      const missing = promo.lines.filter((l) => !l.audio).length;
+      const stale = promo.lines.filter((l) => l.stale).length;
+      if (missing) add("voicelines", "todo", `${missing} of ${promo.lines.length} lines have no audio`);
+      else if (stale) add("voicelines", "todo", `${stale} line${stale > 1 ? "s" : ""} changed since the audio was made`);
+      else add("voicelines", "done", `${promo.lines.length} lines`);
+    }
+  }
+
   // 2 facts: every fact id cited in narration is verified in the ledger
-  if (!n) add("facts", "unknown", "no narration.json to read fact ids from");
+  if (promoOnly) {
+    /* a voiceless promo cites no facts; checkable claims go through sk-facts by hand */
+  } else if (!n) add("facts", "unknown", "no narration.json to read fact ids from");
   else {
     const ids = factIds(n);
     const ledger = readJson<Fact[]>(join(ROOT, "docs", "facts", "facts.json"));
@@ -426,7 +508,9 @@ const videoState = (id: string) => {
   }
 
   // 5 narration: exists, has lines, no TODO
-  if (nar.error) add("narration", "fail", `narration.json is not valid JSON: ${nar.error}`);
+  if (promoOnly) {
+    /* no narration in a voiceless promo */
+  } else if (nar.error) add("narration", "fail", `narration.json is not valid JSON: ${nar.error}`);
   else if (!n) add("narration", "todo", `no src/videos/${id}/narration.json (bun run new ${id} --flow <X>)`);
   else {
     const lines = (n.scenes ?? []).flatMap((s) => s.lines ?? []);
@@ -437,7 +521,9 @@ const videoState = (id: string) => {
   }
 
   // 6 tts: real (not estimated), hash matches narration
-  if (voi.error) add("tts", "fail", `voice.json is not valid JSON: ${voi.error}`);
+  if (promoOnly) {
+    /* the promo's lines are the Voice step */
+  } else if (voi.error) add("tts", "fail", `voice.json is not valid JSON: ${voi.error}`);
   else if (!voice) add("tts", "todo", "no voice.json");
   else if (voice.estimated) add("tts", "todo", "voice.json is an estimate (no audio yet)");
   else if (!n) add("tts", "unknown", "no narration.json to compare with");
@@ -463,7 +549,7 @@ const videoState = (id: string) => {
   if (lintRunning.has(id)) add("lint", "unknown", "running…");
   else if (!lint) add("lint", "unknown", "not run yet (press Run lint)");
   else {
-    const newest = Math.max(stat(narrationPath)?.mtimeMs ?? 0, stat(voicePath)?.mtimeMs ?? 0, stat(join(ROOT, "docs", "facts", "facts.json"))?.mtimeMs ?? 0);
+    const newest = Math.max(stat(narrationPath)?.mtimeMs ?? 0, stat(voicePath)?.mtimeMs ?? 0, stat(join(dir, "promo.json"))?.mtimeMs ?? 0, stat(join(dir, "voice-lines.json"))?.mtimeMs ?? 0, stat(join(ROOT, "docs", "facts", "facts.json"))?.mtimeMs ?? 0);
     const counts = lint.errors === null ? `exit ${lint.code}` : `${lint.errors} errors, ${lint.warnings} warnings`;
     if (lint.timedOut) add("lint", "fail", "timed out after 60 s");
     else if (lint.code !== 0) add("lint", newest > lint.at ? "unknown" : "fail", `${counts}${newest > lint.at ? " (stale: inputs changed, re-run)" : ""}`);
@@ -480,7 +566,7 @@ const videoState = (id: string) => {
   const coverJpg = fileInfo(out(id, `${id}-cover.jpg`));
   const caption = fileInfo(out(id, "caption.txt"));
   const pinned = fileInfo(out(id, "pinned-comment.txt"));
-  const voiceM = stat(voicePath)?.mtimeMs ?? 0;
+  const voiceM = promoOnly ? Math.max(stat(join(dir, "promo.json"))?.mtimeMs ?? 0, stat(join(dir, "voice-lines.json"))?.mtimeMs ?? 0) : stat(voicePath)?.mtimeMs ?? 0;
 
   // 7.5 storyboard: planned after the voice, approved before scene code (docs/storyboard.md)
   const sbPath = join(dir, "storyboard.json");
@@ -507,7 +593,7 @@ const videoState = (id: string) => {
     if (older && older.m > f.mtime) return ["warn", `older than ${older.name}: re-run`];
     return ["done", `${(f.size / 1e6).toFixed(1)} MB`];
   };
-  add("render", ...sized(render, `${id}.mp4`, {m: voiceM, name: "voice.json"}));
+  add("render", ...sized(render, `${id}.mp4`, {m: voiceM, name: promoOnly ? "promo.json" : "voice.json"}));
   add("cover", ...(cover ? (["done", cover.path.split("/").pop()!] as [Status, string]) : (["todo", "no cover png/jpg"] as [Status, string])));
   add("normalize", ...sized(loud, `${id}-loud.mp4`, render ? {m: render.mtime, name: `${id}.mp4`} : undefined));
   add("encode", ...sized(upload, `${id}-upload.mp4`, loud ? {m: loud.mtime, name: `${id}-loud.mp4`} : render ? {m: render.mtime, name: `${id}.mp4`} : undefined));
@@ -516,7 +602,8 @@ const videoState = (id: string) => {
   else add("handoff", "todo", "no caption.txt / pinned-comment.txt");
 
   // display order = the sk-pipeline table (facts before brief)
-  const finalSteps = applyPipeline(id, steps, n?.voice?.engine === "recorded" ? "recorded" : "tts");
+  // a voiceless promo keeps its own order (docs/pipeline.json describes the short)
+  const finalSteps = promoOnly ? [...steps].sort((a, b) => a.n - b.n) : applyPipeline(id, steps, n?.voice?.engine === "recorded" ? "recorded" : "tts");
   steps.length = 0;
   steps.push(...finalSteps);
   const nextStep = steps.find((s) => s.status === "todo" || s.status === "fail" || s.status === "unknown");
@@ -528,6 +615,10 @@ const videoState = (id: string) => {
     id,
     kind: "video" as const,
     flow: n?.flow ?? null,
+    format: meta.format,
+    mode: meta.mode,
+    promo: promo && !("error" in promo) ? promo : null,
+    deliverables: deliverables(id, meta.format),
     steps,
     next,
     files: {render, loud, upload, cover, coverJpg, caption, pinned, stills: st, voiceJson: fileInfo(voicePath), narrationJson: fileInfo(narrationPath), storyboard: fileInfo(join(dir, "storyboard.json")), brief: fileInfo(join(ROOT, "briefs", `${id}.md`))},
@@ -552,14 +643,14 @@ const status = () => {
     if (id === "gallery") return {id, kind: "gallery" as const, label: "component gallery", command: "bun run dev gallery"};
     const s = videoState(id);
     const st = stat(join(ROOT, "src", "videos", id));
-    return {id, kind: s.kind, flow: s.flow, steps: s.steps, next: s.next, created: st ? st.birthtimeMs || st.ctimeMs : 0};
+    return {id, kind: s.kind, flow: s.flow, format: s.format, mode: s.mode, cuts: s.deliverables.filter((d) => !d.master).length, steps: s.steps, next: s.next, created: st ? st.birthtimeMs || st.ctimeMs : 0};
   });
   return {root: ROOT, at: Date.now(), lan: LAN, videos};
 };
 
 // ── safe file serving ─────────────────────────────────────────────────────
-const ALLOWED = [/^out\/[^/]+\/[^/]+$/, /^public\/audio\/.+$/, /^public\/sfx\/.+$/, /^briefs\/[^/]+\.md$/, /^src\/videos\/[^/]+\/(narration|voice|storyboard)\.json$/, /^docs\/facts\/(facts|sources)\.json$/];
-const BASES = ["out", "public/audio", "public/sfx", "briefs", "src/videos", "docs/facts"];
+const ALLOWED = [/^out\/[^/]+\/[^/]+$/, /^public\/audio\/.+$/, /^public\/sfx\/.+$/, /^public\/music\/[^/]+\.(mp3|wav|m4a|ogg)$/, /^briefs\/[^/]+\.md$/, /^src\/videos\/[^/]+\/(narration|voice|storyboard)\.json$/, /^docs\/facts\/(facts|sources)\.json$/];
+const BASES = ["out", "public/audio", "public/sfx", "public/music", "briefs", "src/videos", "docs/facts"];
 
 /** Resolve a request path to a file under an allowed base, or null. */
 const safePath = (raw: string): string | null => {
@@ -755,7 +846,7 @@ const route = async (req: Request, url: URL): Promise<Response> => {
     // a custom header forces a CORS preflight, which this server never answers:
     // another site open in the browser cannot trigger lint runs
     if (req.headers.get("x-sk-preview") !== "1") return json({error: "missing x-sk-preview header"}, 400);
-    if (!isFile(join(ROOT, "src", "videos", id, "narration.json"))) return json({error: "no narration.json to lint"}, 400);
+    if (!isFile(join(ROOT, "src", "videos", id, "narration.json")) && !isFile(join(ROOT, "src", "videos", id, "promo.json"))) return json({error: "no narration.json or promo.json to lint"}, 400);
     return json({lint: await runLint(id), running: false});
   }
 
@@ -764,10 +855,13 @@ const route = async (req: Request, url: URL): Promise<Response> => {
     const id = decodeURIComponent(m[1]);
     if (!validVideo(id)) return json({error: `no video "${id}"`}, 404);
     const which = url.searchParams.get("file") ?? "upload";
-    const name = which === "render" ? `${id}.mp4` : which === "loud" ? `${id}-loud.mp4` : `${id}-upload.mp4`;
+    // "render" | "loud" | "upload", or the name of one deliverable in out/<id>/ (a cut: <id>-16s-portrait-upload.mp4)
+    const name = which === "render" ? `${id}.mp4` : which === "loud" ? `${id}-loud.mp4` : which === "upload" ? `${id}-upload.mp4` : which;
+    if (!(name === `${id}.mp4` || name === `${id}-loud.mp4` || (UPLOAD_RE.test(name) && name.startsWith(`${id}-`)))) return json({error: "not a deliverable of this video"}, 400);
     const abs = out(id, name);
     if (!isFile(abs)) return json({probe: null, message: `no out/${id}/${name} yet (bun run encode ${id})`});
-    return json({probe: await probe(abs, rel(abs))});
+    const fm = /-(portrait|landscape)-upload\.mp4$/.exec(name);
+    return json({probe: await probe(abs, rel(abs), fm ? FORMATS[fm[1] as Orientation] : sizeOf(id))});
   }
 
   m = /^\/api\/text\/([^/]+)$/.exec(path);
